@@ -18,7 +18,7 @@ public record EntregaRequest(
 		@Size(max = 20) String telefono,
 		/** Modo transición 2027: renovación con el código del resguardo en papel de 2026. */
 		boolean renovacionDeclarada,
-		/** Enviar el resguardo por email (solo si el hermano o tutor lo acepta). */
+		/** Enviar el resguardo por email (solo si la ficha tiene email). */
 		boolean enviarEmail,
 		String observaciones) {
 }

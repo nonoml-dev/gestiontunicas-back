@@ -1,14 +1,14 @@
 package es.nonomldev.gestiontunicas.devolucion.dto;
 
-import es.nonomldev.gestiontunicas.devolucion.entity.DefectoCapa;
-import es.nonomldev.gestiontunicas.devolucion.entity.ResultadoRevision;
-import es.nonomldev.gestiontunicas.tunica.entity.TipoPieza;
+import es.nonomldev.gestiontunicas.devolucion.entity.DefectoCapaEnum;
+import es.nonomldev.gestiontunicas.devolucion.entity.ResultadoRevisionEnum;
+import es.nonomldev.gestiontunicas.tunica.entity.TipoPiezaEnum;
 
-public record RevisionPiezaDto(
+public record RevisionPiezaDTO(
 		Long id,
 		Long piezaId,
-		TipoPieza tipoPieza,
-		ResultadoRevision resultado,
-		DefectoCapa defectoCapa,
+		TipoPiezaEnum tipoPieza,
+		ResultadoRevisionEnum resultado,
+		DefectoCapaEnum defectoCapa,
 		String observaciones) {
 }

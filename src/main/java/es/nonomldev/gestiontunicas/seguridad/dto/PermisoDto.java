@@ -1,6 +1,6 @@
 package es.nonomldev.gestiontunicas.seguridad.dto;
 
-public record PermisoDto(
+public record PermisoDTO(
 		Long id,
 		String codigo,
 		String modulo,

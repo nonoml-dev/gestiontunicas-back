@@ -1,23 +1,28 @@
 package es.nonomldev.gestiontunicas.importacion.service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
 
 import es.nonomldev.gestiontunicas.comun.exception.ReglaNegocioException;
@@ -38,11 +43,15 @@ public class LectorExcelHermanos {
 	private static final int COL_NOMBRE = 0;
 	private static final int COL_NUMERO = 1;
 	private static final int COL_FECHA = 2;
-	private static final DateTimeFormatter FECHA_TEXTO = DateTimeFormatter.ofPattern("d/M/yyyy");
+	/** Estricto: "31/02/2012" es un error, no el 29/02/2012 (el modo por defecto lo ajusta sin avisar). */
+	private static final DateTimeFormatter FECHA_TEXTO = DateTimeFormatter.ofPattern("d/M/uuuu")
+			.withResolverStyle(ResolverStyle.STRICT);
 
 	/** Una fila ya interpretada. Si {@code errores} no está vacío, la fila no se puede importar. */
 	public record FilaLeida(
 			int numFila,
+			/** Primera columna tal cual venía ("Apellidos, Nombre"), para identificar la fila si tiene errores. */
+			String nombreOriginal,
 			String apellidos,
 			String nombre,
 			String numeroHermano,
@@ -82,6 +91,43 @@ public class LectorExcelHermanos {
 		}
 	}
 
+	/**
+	 * Cabecera tal cual viene en el Excel de Secretaría ("LISTA 10-15 AÑOS"): Nombre ("APELLIDOS, NOMBRE"),
+	 * Número, Fecha de N (fecha de nacimiento) y Edad (no se importa). Solo se lee la primera hoja.
+	 */
+	static final String[] CABECERA = { "Nombre", "Número", "Fecha de N", "Edad" };
+
+	/** Excel vacío con la cabecera, para la plantilla descargable. */
+	public byte[] plantilla() {
+		try (XSSFWorkbook libro = new XSSFWorkbook(); ByteArrayOutputStream salida = new ByteArrayOutputStream()) {
+			Sheet hoja = libro.createSheet("Hermanos");
+			Font negrita = libro.createFont();
+			negrita.setBold(true);
+			CellStyle estiloCabecera = libro.createCellStyle();
+			estiloCabecera.setFont(negrita);
+
+			Row cabecera = hoja.createRow(0);
+			for (int i = 0; i < CABECERA.length; i++) {
+				Cell celda = cabecera.createCell(i);
+				celda.setCellValue(CABECERA[i]);
+				celda.setCellStyle(estiloCabecera);
+			}
+			int[] anchos = { 50, 10, 12, 8 };
+			// La fecha de nacimiento como fecha de Excel, igual que en el fichero de Secretaría.
+			CellStyle estiloFecha = libro.createCellStyle();
+			estiloFecha.setDataFormat(libro.getCreationHelper().createDataFormat().getFormat("dd/mm/yyyy"));
+			hoja.setDefaultColumnStyle(COL_FECHA, estiloFecha);
+			for (int i = 0; i < anchos.length; i++) {
+				hoja.setColumnWidth(i, anchos[i] * 256);
+			}
+			hoja.createFreezePane(0, 1);
+			libro.write(salida);
+			return salida.toByteArray();
+		} catch (IOException e) {
+			throw new IllegalStateException("No se ha podido generar la plantilla", e);
+		}
+	}
+
 	private FilaLeida interpretar(int numFila, String textoNombre, String numero, Cell celdaFecha,
 			DataFormatter formato, Set<String> numerosVistos) {
 		List<String> errores = new ArrayList<>();
@@ -112,7 +158,7 @@ public class LectorExcelHermanos {
 			}
 		}
 
-		return new FilaLeida(numFila, apellidos, nombre, numero.isEmpty() ? null : numero, fecha, errores);
+		return new FilaLeida(numFila, textoNombre, apellidos, nombre, numero.isEmpty() ? null : numero, fecha, errores);
 	}
 
 	private static boolean esCabecera(DataFormatter formato, Cell celdaFecha) {

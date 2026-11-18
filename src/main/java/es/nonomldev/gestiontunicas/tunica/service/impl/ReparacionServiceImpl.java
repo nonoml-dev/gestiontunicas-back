@@ -9,14 +9,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.nonomldev.gestiontunicas.comun.exception.RecursoNoEncontradoException;
 import es.nonomldev.gestiontunicas.comun.exception.ReglaNegocioException;
-import es.nonomldev.gestiontunicas.tunica.dto.ReparacionDto;
+import es.nonomldev.gestiontunicas.tunica.dto.ReparacionDTO;
 import es.nonomldev.gestiontunicas.tunica.dto.ReparacionRequest;
-import es.nonomldev.gestiontunicas.tunica.entity.EstadoPieza;
-import es.nonomldev.gestiontunicas.tunica.entity.EstadoReparacion;
-import es.nonomldev.gestiontunicas.tunica.entity.EstadoTunica;
-import es.nonomldev.gestiontunicas.tunica.entity.Pieza;
-import es.nonomldev.gestiontunicas.tunica.entity.Reparacion;
-import es.nonomldev.gestiontunicas.tunica.entity.Tunica;
+import es.nonomldev.gestiontunicas.tunica.entity.EstadoPiezaEnum;
+import es.nonomldev.gestiontunicas.tunica.entity.EstadoReparacionEnum;
+import es.nonomldev.gestiontunicas.tunica.entity.EstadoTunicaEnum;
+import es.nonomldev.gestiontunicas.tunica.entity.PiezaEntity;
+import es.nonomldev.gestiontunicas.tunica.entity.ReparacionEntity;
+import es.nonomldev.gestiontunicas.tunica.entity.TunicaEntity;
 import es.nonomldev.gestiontunicas.tunica.mapper.TunicaMapper;
 import es.nonomldev.gestiontunicas.tunica.repository.PiezaRepository;
 import es.nonomldev.gestiontunicas.tunica.repository.ReparacionRepository;
@@ -29,11 +29,11 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class ReparacionServiceImpl implements ReparacionService {
 
-	private static final Set<EstadoReparacion> ABIERTAS = EnumSet.of(EstadoReparacion.PENDIENTE, EstadoReparacion.EN_CURSO);
+	private static final Set<EstadoReparacionEnum> ABIERTAS = EnumSet.of(EstadoReparacionEnum.PENDIENTE, EstadoReparacionEnum.EN_CURSO);
 
 	/** Estados de la túnica que cambian al abrir o cerrar una reparación (si está fuera, no se toca). */
-	private static final Set<EstadoTunica> EN_CASA = EnumSet.of(EstadoTunica.DISPONIBLE, EstadoTunica.EN_REVISION,
-			EstadoTunica.EN_REPARACION, EstadoTunica.INCOMPLETA);
+	private static final Set<EstadoTunicaEnum> EN_CASA = EnumSet.of(EstadoTunicaEnum.DISPONIBLE, EstadoTunicaEnum.EN_REVISION,
+			EstadoTunicaEnum.EN_REPARACION, EstadoTunicaEnum.INCOMPLETA);
 
 	private final ReparacionRepository reparacionRepository;
 	private final PiezaRepository piezaRepository;
@@ -42,29 +42,29 @@ public class ReparacionServiceImpl implements ReparacionService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<ReparacionDto> deTunica(Long tunicaId) {
-		return mapper.toReparacionDtos(reparacionRepository.findByPiezaTunicaIdOrderByFechaInicioDesc(tunicaId));
+	public List<ReparacionDTO> deTunica(Long tunicaId) {
+		return mapper.toReparacionDTOs(reparacionRepository.findByPiezaTunicaIdOrderByFechaInicioDesc(tunicaId));
 	}
 
 	@Override
-	public ReparacionDto registrar(Long tunicaId, ReparacionRequest request) {
-		Tunica tunica = tunicaRepository.findById(tunicaId)
+	public ReparacionDTO registrar(Long tunicaId, ReparacionRequest request) {
+		TunicaEntity tunica = tunicaRepository.findById(tunicaId)
 				.orElseThrow(() -> new RecursoNoEncontradoException("la túnica", tunicaId));
-		Pieza pieza = piezaRepository.findByTunicaIdAndTipo(tunicaId, request.tipoPieza())
+		PiezaEntity pieza = piezaRepository.findByTunicaIdAndTipo(tunicaId, request.tipoPieza())
 				.orElseThrow(() -> new RecursoNoEncontradoException(
 						"La túnica %s no tiene la pieza %s".formatted(tunica.getCodigo(), request.tipoPieza())));
 		validarFechas(request);
 
-		Reparacion reparacion = mapper.toEntity(request);
+		ReparacionEntity reparacion = mapper.toEntity(request);
 		reparacion.setPieza(pieza);
 		reparacionRepository.save(reparacion);
 		aplicarEstado(reparacion, tunica);
-		return mapper.toDto(reparacion);
+		return mapper.toDTO(reparacion);
 	}
 
 	@Override
-	public ReparacionDto actualizar(Long id, ReparacionRequest request) {
-		Reparacion reparacion = reparacionRepository.findById(id)
+	public ReparacionDTO actualizar(Long id, ReparacionRequest request) {
+		ReparacionEntity reparacion = reparacionRepository.findById(id)
 				.orElseThrow(() -> new RecursoNoEncontradoException("la reparación", id));
 		if (reparacion.getPieza().getTipo() != request.tipoPieza()) {
 			throw new ReglaNegocioException("No se puede cambiar la pieza de una reparación ya registrada");
@@ -72,7 +72,7 @@ public class ReparacionServiceImpl implements ReparacionService {
 		validarFechas(request);
 		mapper.actualizar(request, reparacion);
 		aplicarEstado(reparacion, reparacion.getPieza().getTunica());
-		return mapper.toDto(reparacion);
+		return mapper.toDTO(reparacion);
 	}
 
 	/**
@@ -80,27 +80,27 @@ public class ReparacionServiceImpl implements ReparacionService {
 	 * Reparación finalizada: la pieza queda en buen estado y, si no quedan otras reparaciones abiertas
 	 * ni piezas dañadas o perdidas, la túnica vuelve a estar disponible.
 	 */
-	private void aplicarEstado(Reparacion reparacion, Tunica tunica) {
-		Pieza pieza = reparacion.getPieza();
+	private void aplicarEstado(ReparacionEntity reparacion, TunicaEntity tunica) {
+		PiezaEntity pieza = reparacion.getPieza();
 		if (ABIERTAS.contains(reparacion.getEstado())) {
-			pieza.setEstado(EstadoPieza.EN_REPARACION);
+			pieza.setEstado(EstadoPiezaEnum.EN_REPARACION);
 			if (EN_CASA.contains(tunica.getEstado())) {
-				tunica.setEstado(EstadoTunica.EN_REPARACION);
+				tunica.setEstado(EstadoTunicaEnum.EN_REPARACION);
 			}
 			return;
 		}
-		pieza.setEstado(EstadoPieza.BUEN_ESTADO);
+		pieza.setEstado(EstadoPiezaEnum.BUEN_ESTADO);
 		reparacionRepository.flush();
 		boolean quedanAbiertas = reparacionRepository.existsByPiezaTunicaIdAndEstadoIn(tunica.getId(), ABIERTAS);
 		boolean quedanDanadas = piezaRepository.findByTunicaIdOrderByTipo(tunica.getId()).stream()
-				.anyMatch(p -> p.getEstado() != EstadoPieza.BUEN_ESTADO);
+				.anyMatch(p -> p.getEstado() != EstadoPiezaEnum.BUEN_ESTADO);
 		if (!quedanAbiertas && !quedanDanadas && EN_CASA.contains(tunica.getEstado())) {
-			tunica.setEstado(EstadoTunica.DISPONIBLE);
+			tunica.setEstado(EstadoTunicaEnum.DISPONIBLE);
 		}
 	}
 
 	private static void validarFechas(ReparacionRequest request) {
-		if (request.estado() == EstadoReparacion.FINALIZADA && request.fechaFin() == null) {
+		if (request.estado() == EstadoReparacionEnum.FINALIZADA && request.fechaFin() == null) {
 			throw new ReglaNegocioException("Indica la fecha en que se terminó la reparación");
 		}
 		if (request.fechaFin() != null && request.fechaFin().isBefore(request.fechaInicio())) {

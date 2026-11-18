@@ -8,18 +8,18 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 import es.nonomldev.gestiontunicas.comun.mapper.MapStructConfig;
-import es.nonomldev.gestiontunicas.seguridad.dto.UsuarioDto;
+import es.nonomldev.gestiontunicas.seguridad.dto.UsuarioDTO;
 import es.nonomldev.gestiontunicas.seguridad.dto.UsuarioRequest;
-import es.nonomldev.gestiontunicas.seguridad.entity.Rol;
-import es.nonomldev.gestiontunicas.seguridad.entity.RolCodigo;
-import es.nonomldev.gestiontunicas.seguridad.entity.Usuario;
+import es.nonomldev.gestiontunicas.seguridad.entity.RolEntity;
+import es.nonomldev.gestiontunicas.seguridad.entity.RolCodigoEnum;
+import es.nonomldev.gestiontunicas.seguridad.entity.UsuarioEntity;
 
 @Mapper(config = MapStructConfig.class)
 public interface UsuarioMapper {
 
 	@Mapping(target = "cargoEtiqueta", source = "cargo.etiqueta")
 	@Mapping(target = "bloqueado", expression = "java(usuario.estaBloqueado())")
-	UsuarioDto toDto(Usuario usuario);
+	UsuarioDTO toDTO(UsuarioEntity usuario);
 
 	/** Los roles, la contraseña y los datos de seguridad los rellena el servicio. */
 	@Mapping(target = "roles", ignore = true)
@@ -28,7 +28,7 @@ public interface UsuarioMapper {
 	@Mapping(target = "intentosFallidos", ignore = true)
 	@Mapping(target = "bloqueadoHasta", ignore = true)
 	@Mapping(target = "ultimoAcceso", ignore = true)
-	Usuario toEntity(UsuarioRequest request);
+	UsuarioEntity toEntity(UsuarioRequest request);
 
 	@Mapping(target = "roles", ignore = true)
 	@Mapping(target = "passwordHash", ignore = true)
@@ -36,10 +36,10 @@ public interface UsuarioMapper {
 	@Mapping(target = "intentosFallidos", ignore = true)
 	@Mapping(target = "bloqueadoHasta", ignore = true)
 	@Mapping(target = "ultimoAcceso", ignore = true)
-	void actualizar(UsuarioRequest request, @MappingTarget Usuario usuario);
+	void actualizar(UsuarioRequest request, @MappingTarget UsuarioEntity usuario);
 
-	default Set<RolCodigo> rolesACodigos(Set<Rol> roles) {
-		return roles.stream().map(Rol::getCodigo).collect(Collectors.toSet());
+	default Set<RolCodigoEnum> rolesACodigos(Set<RolEntity> roles) {
+		return roles.stream().map(RolEntity::getCodigo).collect(Collectors.toSet());
 	}
 
 }

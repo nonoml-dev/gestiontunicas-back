@@ -5,13 +5,13 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import es.nonomldev.gestiontunicas.tunica.entity.Pieza;
-import es.nonomldev.gestiontunicas.tunica.entity.TipoPieza;
+import es.nonomldev.gestiontunicas.tunica.entity.PiezaEntity;
+import es.nonomldev.gestiontunicas.tunica.entity.TipoPiezaEnum;
 
-public interface PiezaRepository extends JpaRepository<Pieza, Long> {
+public interface PiezaRepository extends JpaRepository<PiezaEntity, Long> {
 
-	List<Pieza> findByTunicaIdOrderByTipo(Long tunicaId);
+	List<PiezaEntity> findByTunicaIdOrderByTipo(Long tunicaId);
 
-	Optional<Pieza> findByTunicaIdAndTipo(Long tunicaId, TipoPieza tipo);
+	Optional<PiezaEntity> findByTunicaIdAndTipo(Long tunicaId, TipoPiezaEnum tipo);
 
 }

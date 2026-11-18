@@ -4,9 +4,9 @@ import java.io.InputStream;
 import java.util.List;
 
 import es.nonomldev.gestiontunicas.importacion.dto.DecisionFilaRequest;
-import es.nonomldev.gestiontunicas.importacion.dto.ImportacionDto;
-import es.nonomldev.gestiontunicas.importacion.dto.ImportacionFilaDto;
-import es.nonomldev.gestiontunicas.importacion.entity.EstadoFila;
+import es.nonomldev.gestiontunicas.importacion.dto.ImportacionDTO;
+import es.nonomldev.gestiontunicas.importacion.dto.ImportacionFilaDTO;
+import es.nonomldev.gestiontunicas.importacion.entity.EstadoFilaEnum;
 
 /**
  * Asistente de importación del Excel de hermanos: subir → revisar → confirmar.
@@ -15,19 +15,22 @@ import es.nonomldev.gestiontunicas.importacion.entity.EstadoFila;
 public interface ImportacionHermanosService {
 
 	/** Lee el Excel y deja la importación PREVISUALIZADA con cada fila clasificada. No toca los hermanos. */
-	ImportacionDto previsualizar(String nombreFichero, InputStream excel, Long repartoId);
+	ImportacionDTO previsualizar(String nombreFichero, InputStream excel, Long repartoId);
 
-	ImportacionDto obtener(Long id);
+	ImportacionDTO obtener(Long id);
 
 	/** Filas de la importación; {@code estado} nulo = todas. */
-	List<ImportacionFilaDto> filas(Long importacionId, EstadoFila estado);
+	List<ImportacionFilaDTO> filas(Long importacionId, EstadoFilaEnum estado);
 
 	/** Decisión del usuario sobre una fila (sobre todo, los posibles duplicados). */
-	ImportacionFilaDto decidir(Long filaId, DecisionFilaRequest request);
+	ImportacionFilaDTO decidir(Long filaId, DecisionFilaRequest request);
 
 	/** Crea y actualiza los hermanos según la decisión de cada fila. */
-	ImportacionDto confirmar(Long id);
+	ImportacionDTO confirmar(Long id);
 
-	ImportacionDto cancelar(Long id);
+	ImportacionDTO cancelar(Long id);
+
+	/** Excel vacío con la cabecera del formato de Secretaría, para descargarlo como plantilla. */
+	byte[] plantilla();
 
 }

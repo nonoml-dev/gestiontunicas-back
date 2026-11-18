@@ -20,15 +20,13 @@ public final class VariablesResguardo {
 			"hermandad.nombre", "fecha_hoy",
 			// Hermano
 			"hermano.nombre", "hermano.apellidos", "hermano.nombre_completo", "hermano.fecha_nacimiento",
-			"hermano.edad", "hermano.telefono", "hermano.telefonos", "hermano.email", "hermano.direccion",
-			// Tutor
-			"tutor.nombre", "tutor.telefono", "tutor.email",
+			"hermano.edad", "hermano.telefono1", "hermano.telefono2", "hermano.telefonos", "hermano.email",
 			// Túnica
 			"tunica.codigo", "tunica.medida", "tunica.dobladillo", "tunica.medida_total",
 			// Entrega
 			"resguardo.numero", "resguardo.fecha_emision", "alquiler.tipo", "alquiler.fecha_entrega",
 			"alquiler.jornada", "alquiler.limosna", "alquiler.entregado_por",
-			// Reparto
+			// RepartoEntity
 			"reparto.anio", "reparto.devolucion_inicio", "reparto.devolucion_fin", "reparto.fin_plazo_gracia",
 			"reparto.lugar_devolucion", "reparto.importe_a", "reparto.importe_b", "reparto.importe_c",
 			"reparto.importe_d", "reparto.importe_e", "reparto.importe_f");

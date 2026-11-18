@@ -14,8 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.nonomldev.gestiontunicas.comun.exception.RecursoNoEncontradoException;
 import es.nonomldev.gestiontunicas.comun.exception.ReglaNegocioException;
-import es.nonomldev.gestiontunicas.reparto.dto.PlantillaResguardoDto;
-import es.nonomldev.gestiontunicas.reparto.entity.PlantillaResguardo;
+import es.nonomldev.gestiontunicas.reparto.dto.PlantillaResguardoDTO;
+import es.nonomldev.gestiontunicas.reparto.entity.PlantillaResguardoEntity;
 import es.nonomldev.gestiontunicas.reparto.mapper.RepartoMapper;
 import es.nonomldev.gestiontunicas.reparto.repository.PlantillaResguardoRepository;
 import es.nonomldev.gestiontunicas.reparto.service.PlantillaResguardoService;
@@ -34,33 +34,33 @@ public class PlantillaResguardoServiceImpl implements PlantillaResguardoService 
 	private final Clock clock;
 
 	@Override
-	public PlantillaResguardoDto subir(String nombre, String nombreFichero, byte[] contenido) {
+	public PlantillaResguardoDTO subir(String nombre, String nombreFichero, byte[] contenido) {
 		if (nombreFichero == null || !nombreFichero.toLowerCase().endsWith(".docx")) {
 			throw new ReglaNegocioException("La plantilla tiene que ser un documento Word (.docx)");
 		}
 		if (contenido == null || contenido.length == 0) {
 			throw new ReglaNegocioException("El fichero de la plantilla está vacío");
 		}
-		PlantillaResguardo plantilla = new PlantillaResguardo();
+		PlantillaResguardoEntity plantilla = new PlantillaResguardoEntity();
 		plantilla.setNombre(nombre == null || nombre.isBlank() ? nombreFichero : nombre);
 		plantilla.setNombreFichero(nombreFichero);
 		plantilla.setContenido(contenido);
 		plantilla.setVariablesDetectadas(new ArrayList<>(detectarVariables(contenido)));
 		plantilla.setSubidoPor(usuarioActualService.obtener());
 		plantilla.setSubidoEn(Instant.now(clock));
-		return mapper.toDto(repository.save(plantilla));
+		return mapper.toDTO(repository.save(plantilla));
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<PlantillaResguardoDto> listar() {
-		return mapper.toPlantillaDtos(repository.findAllByOrderBySubidoEnDesc());
+	public List<PlantillaResguardoDTO> listar() {
+		return mapper.toPlantillaDTOs(repository.findAllByOrderBySubidoEnDesc());
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public PlantillaResguardoDto obtener(Long id) {
-		return mapper.toDto(buscar(id));
+	public PlantillaResguardoDTO obtener(Long id) {
+		return mapper.toDTO(buscar(id));
 	}
 
 	@Override
@@ -79,7 +79,7 @@ public class PlantillaResguardoServiceImpl implements PlantillaResguardoService 
 		}
 	}
 
-	private PlantillaResguardo buscar(Long id) {
+	private PlantillaResguardoEntity buscar(Long id) {
 		return repository.findById(id)
 				.orElseThrow(() -> new RecursoNoEncontradoException("la plantilla del resguardo", id));
 	}

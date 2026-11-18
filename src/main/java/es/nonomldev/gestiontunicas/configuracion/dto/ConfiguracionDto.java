@@ -1,11 +1,11 @@
 package es.nonomldev.gestiontunicas.configuracion.dto;
 
-import es.nonomldev.gestiontunicas.configuracion.entity.TipoValor;
+import es.nonomldev.gestiontunicas.configuracion.entity.TipoValorEnum;
 
-public record ConfiguracionDto(
+public record ConfiguracionDTO(
 		Long id,
 		String clave,
 		String valor,
-		TipoValor tipo,
+		TipoValorEnum tipo,
 		String descripcion) {
 }

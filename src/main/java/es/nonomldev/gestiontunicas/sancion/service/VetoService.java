@@ -3,7 +3,7 @@ package es.nonomldev.gestiontunicas.sancion.service;
 import java.util.List;
 
 import es.nonomldev.gestiontunicas.comun.dto.MotivoRequest;
-import es.nonomldev.gestiontunicas.sancion.dto.VetoDto;
+import es.nonomldev.gestiontunicas.sancion.dto.VetoDTO;
 import es.nonomldev.gestiontunicas.sancion.dto.VetoRequest;
 
 /**
@@ -12,13 +12,13 @@ import es.nonomldev.gestiontunicas.sancion.dto.VetoRequest;
  */
 public interface VetoService {
 
-	List<VetoDto> deHermano(Long hermanoId);
+	List<VetoDTO> deHermano(Long hermanoId);
 
 	/** Vetos activos que impiden alquilar en el reparto de ese año. */
-	List<VetoDto> vigentes(Integer anio);
+	List<VetoDTO> vigentes(Integer anio);
 
-	VetoDto imponer(VetoRequest request);
+	VetoDTO imponer(VetoRequest request);
 
-	VetoDto levantar(Long id, MotivoRequest request);
+	VetoDTO levantar(Long id, MotivoRequest request);
 
 }

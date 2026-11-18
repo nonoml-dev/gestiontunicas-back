@@ -6,10 +6,10 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 import es.nonomldev.gestiontunicas.devolucion.dto.RevisionPiezaRequest;
-import es.nonomldev.gestiontunicas.devolucion.entity.Gravedad;
-import es.nonomldev.gestiontunicas.devolucion.entity.ResultadoRevision;
-import es.nonomldev.gestiontunicas.sancion.entity.ConceptoSancion;
-import es.nonomldev.gestiontunicas.tunica.entity.TipoPieza;
+import es.nonomldev.gestiontunicas.devolucion.entity.GravedadEnum;
+import es.nonomldev.gestiontunicas.devolucion.entity.ResultadoRevisionEnum;
+import es.nonomldev.gestiontunicas.sancion.entity.ConceptoSancionEnum;
+import es.nonomldev.gestiontunicas.tunica.entity.TipoPiezaEnum;
 
 /**
  * Reglas de sanción de la devolución (análisis §4.8):
@@ -25,50 +25,50 @@ import es.nonomldev.gestiontunicas.tunica.entity.TipoPieza;
 @Component
 public class CalculadoraSanciones {
 
-	public record Resultado(List<ConceptoSancion> conceptos, Gravedad gravedad) {
+	public record Resultado(List<ConceptoSancionEnum> conceptos, GravedadEnum gravedad) {
 	}
 
 	public Resultado calcular(List<RevisionPiezaRequest> revisiones, boolean fueraPlazo) {
-		List<ConceptoSancion> conceptos = new ArrayList<>();
+		List<ConceptoSancionEnum> conceptos = new ArrayList<>();
 
 		boolean principalDanada = revisiones.stream()
 				.filter(r -> r.tipoPieza().esPrincipal())
-				.anyMatch(r -> danada(r) || r.resultado() == ResultadoRevision.NO_ENTREGADA);
+				.anyMatch(r -> danada(r) || r.resultado() == ResultadoRevisionEnum.NO_ENTREGADA);
 		if (principalDanada) {
-			conceptos.add(ConceptoSancion.PIEZA_PRINCIPAL);
+			conceptos.add(ConceptoSancionEnum.PIEZA_PRINCIPAL);
 		}
-		if (revisiones.stream().anyMatch(r -> r.tipoPieza() == TipoPieza.TALEGA
-				&& r.resultado() == ResultadoRevision.NO_ENTREGADA)) {
-			conceptos.add(ConceptoSancion.TALEGA);
+		if (revisiones.stream().anyMatch(r -> r.tipoPieza() == TipoPiezaEnum.TALEGA
+				&& r.resultado() == ResultadoRevisionEnum.NO_ENTREGADA)) {
+			conceptos.add(ConceptoSancionEnum.TALEGA);
 		}
-		if (revisiones.stream().anyMatch(r -> r.tipoPieza() == TipoPieza.CINGULO
-				&& (danada(r) || r.resultado() == ResultadoRevision.NO_ENTREGADA))) {
-			conceptos.add(ConceptoSancion.CINGULO);
+		if (revisiones.stream().anyMatch(r -> r.tipoPieza() == TipoPiezaEnum.CINGULO
+				&& (danada(r) || r.resultado() == ResultadoRevisionEnum.NO_ENTREGADA))) {
+			conceptos.add(ConceptoSancionEnum.CINGULO);
 		}
-		boolean sucia = revisiones.stream().anyMatch(r -> r.resultado() == ResultadoRevision.SUCIA);
+		boolean sucia = revisiones.stream().anyMatch(r -> r.resultado() == ResultadoRevisionEnum.SUCIA);
 		if (sucia) {
-			conceptos.add(ConceptoSancion.SUCIEDAD);
+			conceptos.add(ConceptoSancionEnum.SUCIEDAD);
 		}
 		if (fueraPlazo) {
-			conceptos.add(ConceptoSancion.RETRASO);
+			conceptos.add(ConceptoSancionEnum.RETRASO);
 		}
 
-		Gravedad gravedad;
+		GravedadEnum gravedad;
 		if (fueraPlazo) {
-			gravedad = Gravedad.MUY_GRAVE;
-		} else if (conceptos.stream().anyMatch(c -> c != ConceptoSancion.SUCIEDAD)) {
-			gravedad = Gravedad.GRAVE;
+			gravedad = GravedadEnum.MUY_GRAVE;
+		} else if (conceptos.stream().anyMatch(c -> c != ConceptoSancionEnum.SUCIEDAD)) {
+			gravedad = GravedadEnum.GRAVE;
 		} else if (sucia) {
-			gravedad = Gravedad.LEVE;
+			gravedad = GravedadEnum.LEVE;
 		} else {
-			gravedad = Gravedad.NINGUNA;
+			gravedad = GravedadEnum.NINGUNA;
 		}
 		return new Resultado(List.copyOf(conceptos), gravedad);
 	}
 
 	/** Deteriorada, o capa con el escudo JHS despegado o perdido. */
 	private static boolean danada(RevisionPiezaRequest revision) {
-		return revision.resultado() == ResultadoRevision.DETERIORADA || revision.defectoCapa() != null;
+		return revision.resultado() == ResultadoRevisionEnum.DETERIORADA || revision.defectoCapa() != null;
 	}
 
 }

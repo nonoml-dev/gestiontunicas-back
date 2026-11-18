@@ -4,13 +4,13 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import es.nonomldev.gestiontunicas.comun.mapper.MapStructConfig;
-import es.nonomldev.gestiontunicas.seguridad.dto.RegistroAuditoriaDto;
-import es.nonomldev.gestiontunicas.seguridad.entity.RegistroAuditoria;
+import es.nonomldev.gestiontunicas.seguridad.dto.RegistroAuditoriaDTO;
+import es.nonomldev.gestiontunicas.seguridad.entity.RegistroAuditoriaEntity;
 
 @Mapper(config = MapStructConfig.class)
 public interface RegistroAuditoriaMapper {
 
 	@Mapping(target = "usuarioId", source = "usuario.id")
-	RegistroAuditoriaDto toDto(RegistroAuditoria registro);
+	RegistroAuditoriaDTO toDTO(RegistroAuditoriaEntity registro);
 
 }

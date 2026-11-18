@@ -6,23 +6,23 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import es.nonomldev.gestiontunicas.reparto.entity.EstadoReparto;
-import es.nonomldev.gestiontunicas.reparto.entity.Reparto;
+import es.nonomldev.gestiontunicas.reparto.entity.EstadoRepartoEnum;
+import es.nonomldev.gestiontunicas.reparto.entity.RepartoEntity;
 
-public interface RepartoRepository extends JpaRepository<Reparto, Long> {
+public interface RepartoRepository extends JpaRepository<RepartoEntity, Long> {
 
 	@EntityGraph(attributePaths = "jornadas")
-	Optional<Reparto> findByAnio(Integer anio);
+	Optional<RepartoEntity> findByAnio(Integer anio);
 
 	boolean existsByAnio(Integer anio);
 
 	/** El reparto en curso (solo puede haber uno ABIERTO). */
 	@EntityGraph(attributePaths = "jornadas")
-	Optional<Reparto> findFirstByEstado(EstadoReparto estado);
+	Optional<RepartoEntity> findFirstByEstado(EstadoRepartoEnum estado);
 
-	List<Reparto> findAllByOrderByAnioDesc();
+	List<RepartoEntity> findAllByOrderByAnioDesc();
 
 	@EntityGraph(attributePaths = "jornadas")
-	Optional<Reparto> findWithJornadasById(Long id);
+	Optional<RepartoEntity> findWithJornadasById(Long id);
 
 }

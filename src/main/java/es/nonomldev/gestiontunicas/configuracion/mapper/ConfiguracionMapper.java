@@ -7,20 +7,20 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 import es.nonomldev.gestiontunicas.comun.mapper.MapStructConfig;
-import es.nonomldev.gestiontunicas.configuracion.dto.ConfiguracionDto;
+import es.nonomldev.gestiontunicas.configuracion.dto.ConfiguracionDTO;
 import es.nonomldev.gestiontunicas.configuracion.dto.ConfiguracionRequest;
-import es.nonomldev.gestiontunicas.configuracion.entity.Configuracion;
+import es.nonomldev.gestiontunicas.configuracion.entity.ConfiguracionEntity;
 
 @Mapper(config = MapStructConfig.class)
 public interface ConfiguracionMapper {
 
-	ConfiguracionDto toDto(Configuracion configuracion);
+	ConfiguracionDTO toDTO(ConfiguracionEntity configuracion);
 
-	List<ConfiguracionDto> toDtos(List<Configuracion> configuraciones);
+	List<ConfiguracionDTO> toDTOs(List<ConfiguracionEntity> configuraciones);
 
 	@Mapping(target = "clave", ignore = true)
 	@Mapping(target = "tipo", ignore = true)
 	@Mapping(target = "descripcion", ignore = true)
-	void actualizar(ConfiguracionRequest request, @MappingTarget Configuracion configuracion);
+	void actualizar(ConfiguracionRequest request, @MappingTarget ConfiguracionEntity configuracion);
 
 }

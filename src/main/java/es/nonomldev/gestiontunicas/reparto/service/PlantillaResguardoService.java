@@ -2,7 +2,7 @@ package es.nonomldev.gestiontunicas.reparto.service;
 
 import java.util.List;
 
-import es.nonomldev.gestiontunicas.reparto.dto.PlantillaResguardoDto;
+import es.nonomldev.gestiontunicas.reparto.dto.PlantillaResguardoDTO;
 
 /**
  * Plantilla Word del resguardo que aporta el prioste. La aplicación no diseña el resguardo:
@@ -10,11 +10,11 @@ import es.nonomldev.gestiontunicas.reparto.dto.PlantillaResguardoDto;
  */
 public interface PlantillaResguardoService {
 
-	PlantillaResguardoDto subir(String nombre, String nombreFichero, byte[] contenido);
+	PlantillaResguardoDTO subir(String nombre, String nombreFichero, byte[] contenido);
 
-	List<PlantillaResguardoDto> listar();
+	List<PlantillaResguardoDTO> listar();
 
-	PlantillaResguardoDto obtener(Long id);
+	PlantillaResguardoDTO obtener(Long id);
 
 	/** El .docx original, para descargarlo. */
 	byte[] contenido(Long id);

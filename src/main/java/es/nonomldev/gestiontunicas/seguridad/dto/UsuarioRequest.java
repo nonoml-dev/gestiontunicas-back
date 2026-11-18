@@ -2,8 +2,8 @@ package es.nonomldev.gestiontunicas.seguridad.dto;
 
 import java.util.Set;
 
-import es.nonomldev.gestiontunicas.seguridad.entity.CargoUsuario;
-import es.nonomldev.gestiontunicas.seguridad.entity.RolCodigo;
+import es.nonomldev.gestiontunicas.seguridad.entity.CargoUsuarioEnum;
+import es.nonomldev.gestiontunicas.seguridad.entity.RolCodigoEnum;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -19,8 +19,8 @@ public record UsuarioRequest(
 		@NotBlank @Size(max = 50) @Pattern(regexp = "^[a-zA-Z0-9._-]+$") String username,
 		@NotBlank @Size(max = 100) String nombre,
 		@Size(max = 150) String apellidos,
-		@NotNull CargoUsuario cargo,
+		@NotNull CargoUsuarioEnum cargo,
 		@Email @Size(max = 150) String email,
 		boolean activo,
-		@NotEmpty Set<RolCodigo> roles) {
+		@NotEmpty Set<RolCodigoEnum> roles) {
 }

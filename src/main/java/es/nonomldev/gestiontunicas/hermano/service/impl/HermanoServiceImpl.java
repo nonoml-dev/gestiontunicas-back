@@ -9,15 +9,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import es.nonomldev.gestiontunicas.comun.exception.RecursoNoEncontradoException;
-import es.nonomldev.gestiontunicas.hermano.dto.HermanoDto;
+import es.nonomldev.gestiontunicas.hermano.dto.ContactoHermanoRequest;
+import es.nonomldev.gestiontunicas.hermano.dto.CriterioEdadDTO;
+import es.nonomldev.gestiontunicas.hermano.dto.HermanoDTO;
 import es.nonomldev.gestiontunicas.hermano.dto.HermanoRequest;
-import es.nonomldev.gestiontunicas.hermano.dto.HermanoResumenDto;
-import es.nonomldev.gestiontunicas.hermano.entity.Hermano;
+import es.nonomldev.gestiontunicas.hermano.dto.HermanoResumenDTO;
+import es.nonomldev.gestiontunicas.hermano.entity.HermanoEntity;
 import es.nonomldev.gestiontunicas.hermano.mapper.HermanoMapper;
 import es.nonomldev.gestiontunicas.hermano.repository.HermanoRepository;
 import es.nonomldev.gestiontunicas.hermano.service.HermanoService;
-import es.nonomldev.gestiontunicas.reparto.entity.EstadoReparto;
-import es.nonomldev.gestiontunicas.reparto.entity.Reparto;
+import es.nonomldev.gestiontunicas.reparto.entity.EstadoRepartoEnum;
+import es.nonomldev.gestiontunicas.reparto.entity.RepartoEntity;
 import es.nonomldev.gestiontunicas.reparto.repository.RepartoRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -26,7 +28,8 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class HermanoServiceImpl implements HermanoService {
 
-	/** Edad máxima por defecto si no hay reparto abierto (10–15 años). */
+	/** Rango de edad por defecto si no hay reparto abierto (10–15 años a Jueves Santo). */
+	private static final int EDAD_MINIMA_POR_DEFECTO = 10;
 	private static final int EDAD_MAXIMA_POR_DEFECTO = 15;
 
 	private final HermanoRepository hermanoRepository;
@@ -36,35 +39,54 @@ public class HermanoServiceImpl implements HermanoService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public Page<HermanoResumenDto> buscar(String texto, Pageable pageable) {
-		String normalizado = texto == null ? "" : Hermano.normalizar(texto);
-		return hermanoRepository.buscar(normalizado, limiteFechaNacimiento(), pageable)
-				.map(hermanoMapper::toResumenDto);
+	public Page<HermanoResumenDTO> buscar(String texto, boolean soloEnEdad, Pageable pageable) {
+		String normalizado = texto == null ? "" : HermanoEntity.normalizar(texto);
+		if (!soloEnEdad) {
+			return hermanoRepository.buscar(normalizado, pageable).map(hermanoMapper::toResumenDTO);
+		}
+		// Edad >= mínima  ⇔ nacido en (Jueves Santo − mínima años) o antes.
+		// Edad <= máxima  ⇔ nacido después de (Jueves Santo − (máxima + 1) años).
+		CriterioEdadDTO criterio = criterioEdad();
+		LocalDate nacidoHasta = criterio.juevesSanto().minusYears(criterio.edadMin());
+		LocalDate nacidoDespuesDe = criterio.juevesSanto().minusYears(criterio.edadMax() + 1L);
+		return hermanoRepository.buscarEnEdad(normalizado, nacidoDespuesDe, nacidoHasta, pageable)
+				.map(hermanoMapper::toResumenDTO);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public HermanoDto obtener(Long id) {
-		return hermanoMapper.toDto(buscarEntidad(id));
+	public CriterioEdadDTO criterioEdad() {
+		return repartoRepository.findFirstByEstado(EstadoRepartoEnum.ABIERTO)
+				.map(r -> new CriterioEdadDTO(r.getFechaJuevesSanto(), r.getEdadMin(), r.getEdadMax(), r.getAnio()))
+				.orElseGet(() -> new CriterioEdadDTO(proximoJuevesSanto(), EDAD_MINIMA_POR_DEFECTO,
+						EDAD_MAXIMA_POR_DEFECTO, null));
 	}
 
 	@Override
-	public HermanoDto crear(HermanoRequest request) {
-		Hermano hermano = hermanoMapper.toEntity(request);
+	@Transactional(readOnly = true)
+	public HermanoDTO obtener(Long id) {
+		return hermanoMapper.toDTO(buscarEntidad(id));
+	}
+
+	@Override
+	public HermanoDTO crear(HermanoRequest request) {
+		HermanoEntity hermano = hermanoMapper.toEntity(request);
 		hermano.setActivo(true);
-		actualizarConsentimiento(hermano, request.consentimientoRgpd());
-		return hermanoMapper.toDto(hermanoRepository.save(hermano));
+		return hermanoMapper.toDTO(hermanoRepository.save(hermano));
 	}
 
 	@Override
-	public HermanoDto actualizar(Long id, HermanoRequest request) {
-		Hermano hermano = buscarEntidad(id);
-		boolean teniaConsentimiento = hermano.isConsentimientoRgpd();
-		hermanoMapper.actualizar(request, hermano);
-		if (teniaConsentimiento != request.consentimientoRgpd()) {
-			actualizarConsentimiento(hermano, request.consentimientoRgpd());
-		}
-		return hermanoMapper.toDto(hermano);
+	public HermanoDTO actualizarContacto(Long id, ContactoHermanoRequest request) {
+		HermanoEntity hermano = buscarEntidad(id);
+		hermano.setTelefono1(sinEspacios(request.telefono1()));
+		hermano.setTelefono2(sinEspacios(request.telefono2()));
+		hermano.setEmail(sinEspacios(request.email()));
+		return hermanoMapper.toDTO(hermano);
+	}
+
+	/** Texto sin espacios a los lados; vacío = nulo. */
+	private static String sinEspacios(String texto) {
+		return texto == null || texto.isBlank() ? null : texto.trim();
 	}
 
 	@Override
@@ -72,28 +94,14 @@ public class HermanoServiceImpl implements HermanoService {
 		buscarEntidad(id).setActivo(false);
 	}
 
-	private Hermano buscarEntidad(Long id) {
+	private HermanoEntity buscarEntidad(Long id) {
 		return hermanoRepository.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("el hermano", id));
-	}
-
-	private void actualizarConsentimiento(Hermano hermano, boolean consiente) {
-		hermano.setFechaConsentimiento(consiente ? LocalDate.now(clock) : null);
-	}
-
-	/**
-	 * Fecha de nacimiento a partir de la cual el hermano aún no ha superado la edad máxima a Jueves Santo:
-	 * los nacidos en esa fecha o antes ya han cumplido (edadMax + 1) años y no salen en el buscador.
-	 */
-	private LocalDate limiteFechaNacimiento() {
-		return repartoRepository.findFirstByEstado(EstadoReparto.ABIERTO)
-				.map(r -> r.getFechaJuevesSanto().minusYears(r.getEdadMax() + 1L))
-				.orElseGet(() -> proximoJuevesSanto().minusYears(EDAD_MAXIMA_POR_DEFECTO + 1L));
 	}
 
 	private LocalDate proximoJuevesSanto() {
 		LocalDate hoy = LocalDate.now(clock);
-		LocalDate esteAnio = Reparto.calcularJuevesSanto(hoy.getYear());
-		return esteAnio.isBefore(hoy) ? Reparto.calcularJuevesSanto(hoy.getYear() + 1) : esteAnio;
+		LocalDate esteAnio = RepartoEntity.calcularJuevesSanto(hoy.getYear());
+		return esteAnio.isBefore(hoy) ? RepartoEntity.calcularJuevesSanto(hoy.getYear() + 1) : esteAnio;
 	}
 
 }

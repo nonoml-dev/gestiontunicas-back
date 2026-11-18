@@ -2,7 +2,7 @@ package es.nonomldev.gestiontunicas.notificacion.service;
 
 import java.util.List;
 
-import es.nonomldev.gestiontunicas.notificacion.dto.NotificacionEmailDto;
+import es.nonomldev.gestiontunicas.notificacion.dto.NotificacionEmailDTO;
 
 /**
  * Emails enviados a un hermano o su tutor (resguardo y recordatorio de devolución).
@@ -10,6 +10,6 @@ import es.nonomldev.gestiontunicas.notificacion.dto.NotificacionEmailDto;
  */
 public interface NotificacionEmailService {
 
-	List<NotificacionEmailDto> deHermano(Long hermanoId);
+	List<NotificacionEmailDTO> deHermano(Long hermanoId);
 
 }

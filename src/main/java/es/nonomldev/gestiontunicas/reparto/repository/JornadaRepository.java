@@ -7,17 +7,17 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import es.nonomldev.gestiontunicas.reparto.entity.Jornada;
+import es.nonomldev.gestiontunicas.reparto.entity.JornadaEntity;
 
-public interface JornadaRepository extends JpaRepository<Jornada, Long> {
+public interface JornadaRepository extends JpaRepository<JornadaEntity, Long> {
 
-	List<Jornada> findByRepartoIdOrderByNumero(Long repartoId);
+	List<JornadaEntity> findByRepartoIdOrderByNumero(Long repartoId);
 
 	/** Jornada del día (para registrar en qué jornada se hizo cada entrega). */
-	Optional<Jornada> findByRepartoIdAndFecha(Long repartoId, LocalDate fecha);
+	Optional<JornadaEntity> findByRepartoIdAndFecha(Long repartoId, LocalDate fecha);
 
 	/** Siguiente número al habilitar una jornada extraordinaria. */
-	@Query("select coalesce(max(j.numero), 0) from Jornada j where j.reparto.id = :repartoId")
+	@Query("select coalesce(max(j.numero), 0) from JornadaEntity j where j.reparto.id = :repartoId")
 	int maxNumero(Long repartoId);
 
 }

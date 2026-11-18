@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-public record JornadaDto(
+public record JornadaDTO(
 		Long id,
 		Integer numero,
 		boolean extraordinaria,

@@ -3,10 +3,10 @@ package es.nonomldev.gestiontunicas.alquiler.dto;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-import es.nonomldev.gestiontunicas.alquiler.entity.EstadoAlquiler;
-import es.nonomldev.gestiontunicas.alquiler.entity.TipoAlquiler;
+import es.nonomldev.gestiontunicas.alquiler.entity.EstadoAlquilerEnum;
+import es.nonomldev.gestiontunicas.alquiler.entity.TipoAlquilerEnum;
 
-public record AlquilerDto(
+public record AlquilerDTO(
 		Long id,
 		Long repartoId,
 		Integer repartoAnio,
@@ -17,7 +17,7 @@ public record AlquilerDto(
 		Integer tunicaMedidaTotalCm,
 		Long jornadaId,
 		Integer jornadaNumero,
-		TipoAlquiler tipo,
+		TipoAlquilerEnum tipo,
 		boolean renovacionDeclarada,
 		Long alquilerAnteriorId,
 		Long alquilerOrigenId,
@@ -25,6 +25,6 @@ public record AlquilerDto(
 		BigDecimal limosna,
 		Instant fechaEntrega,
 		String usuarioEntrega,
-		EstadoAlquiler estado,
+		EstadoAlquilerEnum estado,
 		String observaciones) {
 }

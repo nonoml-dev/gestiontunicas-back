@@ -4,10 +4,10 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import es.nonomldev.gestiontunicas.reparto.entity.CambioPeriodoDevolucion;
+import es.nonomldev.gestiontunicas.reparto.entity.CambioPeriodoDevolucionEntity;
 
-public interface CambioPeriodoDevolucionRepository extends JpaRepository<CambioPeriodoDevolucion, Long> {
+public interface CambioPeriodoDevolucionRepository extends JpaRepository<CambioPeriodoDevolucionEntity, Long> {
 
-	List<CambioPeriodoDevolucion> findByRepartoIdOrderByFechaDesc(Long repartoId);
+	List<CambioPeriodoDevolucionEntity> findByRepartoIdOrderByFechaDesc(Long repartoId);
 
 }

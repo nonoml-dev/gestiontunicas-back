@@ -1,11 +1,11 @@
 package es.nonomldev.gestiontunicas.tunica.dto;
 
-import es.nonomldev.gestiontunicas.tunica.entity.EstadoPieza;
-import es.nonomldev.gestiontunicas.tunica.entity.TipoPieza;
+import es.nonomldev.gestiontunicas.tunica.entity.EstadoPiezaEnum;
+import es.nonomldev.gestiontunicas.tunica.entity.TipoPiezaEnum;
 
-public record PiezaDto(
+public record PiezaDTO(
 		Long id,
-		TipoPieza tipo,
-		EstadoPieza estado,
+		TipoPiezaEnum tipo,
+		EstadoPiezaEnum estado,
 		String observaciones) {
 }

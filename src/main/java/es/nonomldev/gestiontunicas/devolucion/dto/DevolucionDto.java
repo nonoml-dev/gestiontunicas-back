@@ -3,9 +3,9 @@ package es.nonomldev.gestiontunicas.devolucion.dto;
 import java.time.Instant;
 import java.util.List;
 
-import es.nonomldev.gestiontunicas.devolucion.entity.Gravedad;
+import es.nonomldev.gestiontunicas.devolucion.entity.GravedadEnum;
 
-public record DevolucionDto(
+public record DevolucionDTO(
 		Long id,
 		Long alquilerId,
 		Instant fecha,
@@ -13,7 +13,7 @@ public record DevolucionDto(
 		boolean porCambio,
 		boolean fueraPlazo,
 		Integer diasRetraso,
-		Gravedad gravedad,
+		GravedadEnum gravedad,
 		String observaciones,
-		List<RevisionPiezaDto> revisiones) {
+		List<RevisionPiezaDTO> revisiones) {
 }

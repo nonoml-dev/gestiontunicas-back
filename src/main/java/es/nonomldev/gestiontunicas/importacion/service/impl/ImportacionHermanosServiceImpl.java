@@ -13,17 +13,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.nonomldev.gestiontunicas.comun.exception.RecursoNoEncontradoException;
 import es.nonomldev.gestiontunicas.comun.exception.ReglaNegocioException;
-import es.nonomldev.gestiontunicas.hermano.entity.Hermano;
+import es.nonomldev.gestiontunicas.hermano.entity.HermanoEntity;
 import es.nonomldev.gestiontunicas.hermano.repository.HermanoRepository;
 import es.nonomldev.gestiontunicas.importacion.dto.DecisionFilaRequest;
-import es.nonomldev.gestiontunicas.importacion.dto.ImportacionDto;
-import es.nonomldev.gestiontunicas.importacion.dto.ImportacionFilaDto;
-import es.nonomldev.gestiontunicas.importacion.entity.DecisionFila;
-import es.nonomldev.gestiontunicas.importacion.entity.EstadoFila;
-import es.nonomldev.gestiontunicas.importacion.entity.EstadoImportacion;
-import es.nonomldev.gestiontunicas.importacion.entity.Importacion;
-import es.nonomldev.gestiontunicas.importacion.entity.ImportacionFila;
-import es.nonomldev.gestiontunicas.importacion.entity.TipoImportacion;
+import es.nonomldev.gestiontunicas.importacion.dto.ImportacionDTO;
+import es.nonomldev.gestiontunicas.importacion.dto.ImportacionFilaDTO;
+import es.nonomldev.gestiontunicas.importacion.entity.DecisionFilaEnum;
+import es.nonomldev.gestiontunicas.importacion.entity.EstadoFilaEnum;
+import es.nonomldev.gestiontunicas.importacion.entity.EstadoImportacionEnum;
+import es.nonomldev.gestiontunicas.importacion.entity.ImportacionEntity;
+import es.nonomldev.gestiontunicas.importacion.entity.ImportacionFilaEntity;
+import es.nonomldev.gestiontunicas.importacion.entity.TipoImportacionEnum;
 import es.nonomldev.gestiontunicas.importacion.mapper.ImportacionMapper;
 import es.nonomldev.gestiontunicas.importacion.repository.ImportacionFilaRepository;
 import es.nonomldev.gestiontunicas.importacion.repository.ImportacionRepository;
@@ -39,6 +39,7 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class ImportacionHermanosServiceImpl implements ImportacionHermanosService {
 
+	private static final String NOMBRE_ORIGINAL = "nombreOriginal";
 	private static final String APELLIDOS = "apellidos";
 	private static final String NOMBRE = "nombre";
 	private static final String NUMERO = "numeroHermano";
@@ -54,16 +55,16 @@ public class ImportacionHermanosServiceImpl implements ImportacionHermanosServic
 	private final Clock clock;
 
 	@Override
-	public ImportacionDto previsualizar(String nombreFichero, InputStream excel, Long repartoId) {
+	public ImportacionDTO previsualizar(String nombreFichero, InputStream excel, Long repartoId) {
 		List<FilaLeida> leidas = lector.leer(excel);
 		if (leidas.isEmpty()) {
 			throw new ReglaNegocioException("El fichero no tiene ninguna fila con datos");
 		}
 
-		Importacion importacion = new Importacion();
-		importacion.setTipo(TipoImportacion.HERMANOS);
+		ImportacionEntity importacion = new ImportacionEntity();
+		importacion.setTipo(TipoImportacionEnum.HERMANOS);
 		importacion.setNombreFichero(nombreFichero);
-		importacion.setEstado(EstadoImportacion.PREVISUALIZADA);
+		importacion.setEstado(EstadoImportacionEnum.PREVISUALIZADA);
 		importacion.setUsuario(usuarioActualService.obtener());
 		importacion.setCreadoEn(Instant.now(clock));
 		if (repartoId != null) {
@@ -73,71 +74,77 @@ public class ImportacionHermanosServiceImpl implements ImportacionHermanosServic
 
 		leidas.forEach(leida -> importacion.addFila(clasificar(leida)));
 		importacion.recalcularContadores();
-		return mapper.toDto(importacionRepository.save(importacion));
+		return mapper.toDTO(importacionRepository.save(importacion));
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public ImportacionDto obtener(Long id) {
-		return mapper.toDto(buscar(id));
+	public ImportacionDTO obtener(Long id) {
+		return mapper.toDTO(buscar(id));
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<ImportacionFilaDto> filas(Long importacionId, EstadoFila estado) {
-		List<ImportacionFila> filas = estado == null
+	public List<ImportacionFilaDTO> filas(Long importacionId, EstadoFilaEnum estado) {
+		List<ImportacionFilaEntity> filas = estado == null
 				? filaRepository.findByImportacionIdOrderByNumFila(importacionId)
 				: filaRepository.findByImportacionIdAndEstadoOrderByNumFila(importacionId, estado);
-		return mapper.toFilaDtos(filas);
+		return mapper.toFilaDTOs(filas);
 	}
 
 	@Override
-	public ImportacionFilaDto decidir(Long filaId, DecisionFilaRequest request) {
-		ImportacionFila fila = filaRepository.findById(filaId)
+	public ImportacionFilaDTO decidir(Long filaId, DecisionFilaRequest request) {
+		ImportacionFilaEntity fila = filaRepository.findById(filaId)
 				.orElseThrow(() -> new RecursoNoEncontradoException("la fila de importación", filaId));
 		exigirPrevisualizada(fila.getImportacion());
-		if (fila.getEstado() == EstadoFila.ERROR) {
+		if (fila.getEstado() == EstadoFilaEnum.ERROR) {
 			throw new ReglaNegocioException("La fila %d tiene errores y no se puede importar".formatted(fila.getNumFila()));
 		}
-		if (request.decision() == DecisionFila.ACTUALIZAR && fila.getHermanoCoincidente() == null) {
+		if (request.decision() == DecisionFilaEnum.ACTUALIZAR && fila.getHermanoCoincidente() == null) {
 			throw new ReglaNegocioException("La fila %d no coincide con ningún hermano existente".formatted(fila.getNumFila()));
 		}
 		fila.setDecision(request.decision());
-		return mapper.toDto(fila);
+		return mapper.toDTO(fila);
 	}
 
 	@Override
-	public ImportacionDto confirmar(Long id) {
-		Importacion importacion = buscar(id);
+	public ImportacionDTO confirmar(Long id) {
+		ImportacionEntity importacion = buscar(id);
 		exigirPrevisualizada(importacion);
 
 		long sinDecidir = importacion.getFilas().stream()
-				.filter(f -> f.getEstado() != EstadoFila.ERROR && f.getDecision() == null)
+				.filter(f -> f.getEstado() != EstadoFilaEnum.ERROR && f.getDecision() == null)
 				.count();
 		if (sinDecidir > 0) {
 			throw new ReglaNegocioException("Quedan %d posibles duplicados sin decidir".formatted(sinDecidir));
 		}
 
-		for (ImportacionFila fila : importacion.getFilas()) {
-			if (fila.getEstado() == EstadoFila.ERROR || fila.getDecision() == DecisionFila.IGNORAR) {
+		for (ImportacionFilaEntity fila : importacion.getFilas()) {
+			if (fila.getEstado() == EstadoFilaEnum.ERROR || fila.getDecision() == DecisionFilaEnum.IGNORAR) {
 				continue;
 			}
-			Hermano hermano = fila.getDecision() == DecisionFila.ACTUALIZAR
+			HermanoEntity hermano = fila.getDecision() == DecisionFilaEnum.ACTUALIZAR
 					? actualizarHermano(fila)
 					: crearHermano(fila, importacion);
 			fila.setEntidadResultanteId(hermano.getId());
 		}
-		importacion.setEstado(EstadoImportacion.CONFIRMADA);
+		importacion.setEstado(EstadoImportacionEnum.CONFIRMADA);
 		importacion.setConfirmadoEn(Instant.now(clock));
-		return mapper.toDto(importacion);
+		return mapper.toDTO(importacion);
 	}
 
 	@Override
-	public ImportacionDto cancelar(Long id) {
-		Importacion importacion = buscar(id);
+	public ImportacionDTO cancelar(Long id) {
+		ImportacionEntity importacion = buscar(id);
 		exigirPrevisualizada(importacion);
-		importacion.setEstado(EstadoImportacion.CANCELADA);
-		return mapper.toDto(importacion);
+		importacion.setEstado(EstadoImportacionEnum.CANCELADA);
+		return mapper.toDTO(importacion);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public byte[] plantilla() {
+		return lector.plantilla();
 	}
 
 	/**
@@ -150,55 +157,55 @@ public class ImportacionHermanosServiceImpl implements ImportacionHermanosServic
 	 * <li>Sin coincidencias → OK, se crea.</li>
 	 * </ul>
 	 */
-	private ImportacionFila clasificar(FilaLeida leida) {
-		ImportacionFila fila = new ImportacionFila();
+	private ImportacionFilaEntity clasificar(FilaLeida leida) {
+		ImportacionFilaEntity fila = new ImportacionFilaEntity();
 		fila.setNumFila(leida.numFila());
 		fila.setDatos(datos(leida));
 		fila.setErrores(leida.errores());
 
 		if (!leida.errores().isEmpty()) {
-			fila.setEstado(EstadoFila.ERROR);
+			fila.setEstado(EstadoFilaEnum.ERROR);
 			return fila;
 		}
 
-		String normalizado = Hermano.normalizar(leida.apellidos() + " " + leida.nombre());
+		String normalizado = HermanoEntity.normalizar(leida.apellidos() + " " + leida.nombre());
 		if (leida.fechaNacimiento() == null) {
-			List<Hermano> mismoNombre = hermanoRepository.findByNombreNormalizado(normalizado);
-			fila.setEstado(mismoNombre.isEmpty() ? EstadoFila.INCOMPLETA : EstadoFila.POSIBLE_DUPLICADO);
-			fila.setDecision(mismoNombre.isEmpty() ? DecisionFila.CREAR : null);
+			List<HermanoEntity> mismoNombre = hermanoRepository.findByNombreNormalizado(normalizado);
+			fila.setEstado(mismoNombre.isEmpty() ? EstadoFilaEnum.INCOMPLETA : EstadoFilaEnum.POSIBLE_DUPLICADO);
+			fila.setDecision(mismoNombre.isEmpty() ? DecisionFilaEnum.CREAR : null);
 			fila.setHermanoCoincidente(mismoNombre.isEmpty() ? null : mismoNombre.getFirst());
 			return fila;
 		}
 
-		List<Hermano> exactos = hermanoRepository.findByNombreNormalizadoAndFechaNacimiento(normalizado,
+		List<HermanoEntity> exactos = hermanoRepository.findByNombreNormalizadoAndFechaNacimiento(normalizado,
 				leida.fechaNacimiento());
 		if (exactos.size() == 1) {
-			fila.setEstado(EstadoFila.OK);
-			fila.setDecision(DecisionFila.ACTUALIZAR);
+			fila.setEstado(EstadoFilaEnum.OK);
+			fila.setDecision(DecisionFilaEnum.ACTUALIZAR);
 			fila.setHermanoCoincidente(exactos.getFirst());
 			return fila;
 		}
 		if (exactos.size() > 1) {
-			fila.setEstado(EstadoFila.POSIBLE_DUPLICADO);
+			fila.setEstado(EstadoFilaEnum.POSIBLE_DUPLICADO);
 			fila.setHermanoCoincidente(exactos.getFirst());
 			return fila;
 		}
 
-		List<Hermano> mismoNombre = hermanoRepository.findByNombreNormalizado(normalizado);
+		List<HermanoEntity> mismoNombre = hermanoRepository.findByNombreNormalizado(normalizado);
 		if (!mismoNombre.isEmpty()) {
-			fila.setEstado(EstadoFila.POSIBLE_DUPLICADO);
+			fila.setEstado(EstadoFilaEnum.POSIBLE_DUPLICADO);
 			fila.setHermanoCoincidente(mismoNombre.getFirst());
 			return fila;
 		}
 
-		fila.setEstado(EstadoFila.OK);
-		fila.setDecision(DecisionFila.CREAR);
+		fila.setEstado(EstadoFilaEnum.OK);
+		fila.setDecision(DecisionFilaEnum.CREAR);
 		return fila;
 	}
 
-	private Hermano crearHermano(ImportacionFila fila, Importacion importacion) {
+	private HermanoEntity crearHermano(ImportacionFilaEntity fila, ImportacionEntity importacion) {
 		Map<String, Object> datos = fila.getDatos();
-		Hermano hermano = new Hermano();
+		HermanoEntity hermano = new HermanoEntity();
 		hermano.setApellidos((String) datos.get(APELLIDOS));
 		hermano.setNombre((String) datos.get(NOMBRE));
 		hermano.setNumeroHermano((String) datos.get(NUMERO));
@@ -209,8 +216,8 @@ public class ImportacionHermanosServiceImpl implements ImportacionHermanosServic
 	}
 
 	/** El número de hermano cambia cada año: se actualiza. La fecha solo se completa si faltaba. */
-	private Hermano actualizarHermano(ImportacionFila fila) {
-		Hermano hermano = fila.getHermanoCoincidente();
+	private HermanoEntity actualizarHermano(ImportacionFilaEntity fila) {
+		HermanoEntity hermano = fila.getHermanoCoincidente();
 		hermano.setNumeroHermano((String) fila.getDatos().get(NUMERO));
 		if (hermano.getFechaNacimiento() == null) {
 			hermano.setFechaNacimiento(fecha(fila.getDatos()));
@@ -221,6 +228,7 @@ public class ImportacionHermanosServiceImpl implements ImportacionHermanosServic
 
 	private static Map<String, Object> datos(FilaLeida leida) {
 		Map<String, Object> datos = new HashMap<>();
+		datos.put(NOMBRE_ORIGINAL, leida.nombreOriginal());
 		datos.put(APELLIDOS, leida.apellidos());
 		datos.put(NOMBRE, leida.nombre());
 		datos.put(NUMERO, leida.numeroHermano());
@@ -233,13 +241,13 @@ public class ImportacionHermanosServiceImpl implements ImportacionHermanosServic
 		return valor == null ? null : LocalDate.parse(valor.toString());
 	}
 
-	private Importacion buscar(Long id) {
+	private ImportacionEntity buscar(Long id) {
 		return importacionRepository.findById(id)
 				.orElseThrow(() -> new RecursoNoEncontradoException("la importación", id));
 	}
 
-	private static void exigirPrevisualizada(Importacion importacion) {
-		if (importacion.getEstado() != EstadoImportacion.PREVISUALIZADA) {
+	private static void exigirPrevisualizada(ImportacionEntity importacion) {
+		if (importacion.getEstado() != EstadoImportacionEnum.PREVISUALIZADA) {
 			throw new ReglaNegocioException("La importación ya está " + importacion.getEstado().name().toLowerCase());
 		}
 	}

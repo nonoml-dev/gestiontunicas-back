@@ -4,11 +4,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import es.nonomldev.gestiontunicas.importacion.entity.Importacion;
-import es.nonomldev.gestiontunicas.importacion.entity.TipoImportacion;
+import es.nonomldev.gestiontunicas.importacion.entity.ImportacionEntity;
+import es.nonomldev.gestiontunicas.importacion.entity.TipoImportacionEnum;
 
-public interface ImportacionRepository extends JpaRepository<Importacion, Long> {
+public interface ImportacionRepository extends JpaRepository<ImportacionEntity, Long> {
 
-	Page<Importacion> findByTipoOrderByCreadoEnDesc(TipoImportacion tipo, Pageable pageable);
+	Page<ImportacionEntity> findByTipoOrderByCreadoEnDesc(TipoImportacionEnum tipo, Pageable pageable);
 
 }

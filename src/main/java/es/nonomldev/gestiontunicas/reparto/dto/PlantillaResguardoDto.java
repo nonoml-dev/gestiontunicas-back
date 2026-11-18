@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.List;
 
 /** Datos de la plantilla Word del resguardo (sin el contenido del fichero). */
-public record PlantillaResguardoDto(
+public record PlantillaResguardoDTO(
 		Long id,
 		String nombre,
 		String nombreFichero,

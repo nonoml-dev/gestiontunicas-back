@@ -6,14 +6,14 @@ import java.util.Optional;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.nonomldev.gestiontunicas.alquiler.entity.Alquiler;
-import es.nonomldev.gestiontunicas.alquiler.entity.EstadoAlquiler;
+import es.nonomldev.gestiontunicas.alquiler.entity.AlquilerEntity;
+import es.nonomldev.gestiontunicas.alquiler.entity.EstadoAlquilerEnum;
 import es.nonomldev.gestiontunicas.alquiler.repository.AlquilerRepository;
 import es.nonomldev.gestiontunicas.comun.util.Formato;
 import es.nonomldev.gestiontunicas.devolucion.repository.DevolucionRepository;
-import es.nonomldev.gestiontunicas.hermano.entity.Hermano;
-import es.nonomldev.gestiontunicas.reparto.entity.Reparto;
-import es.nonomldev.gestiontunicas.sancion.entity.EstadoSancion;
+import es.nonomldev.gestiontunicas.hermano.entity.HermanoEntity;
+import es.nonomldev.gestiontunicas.reparto.entity.RepartoEntity;
+import es.nonomldev.gestiontunicas.sancion.entity.EstadoSancionEnum;
 import es.nonomldev.gestiontunicas.sancion.repository.SancionRepository;
 import es.nonomldev.gestiontunicas.sancion.repository.VetoRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +33,7 @@ public class RequisitosAlquiler {
 	private final DevolucionRepository devolucionRepository;
 
 	/** Motivo exacto por el que el hermano no puede alquilar en el reparto, o vacío si puede. */
-	public Optional<String> motivoNoPuedeAlquilar(Hermano hermano, Reparto reparto) {
+	public Optional<String> motivoNoPuedeAlquilar(HermanoEntity hermano, RepartoEntity reparto) {
 		if (!hermano.isActivo()) {
 			return Optional.of("El hermano está dado de baja");
 		}
@@ -49,7 +49,7 @@ public class RequisitosAlquiler {
 		if (veto.isPresent()) {
 			return veto;
 		}
-		if (sancionRepository.existsByHermanoIdAndEstado(hermano.getId(), EstadoSancion.PENDIENTE)) {
+		if (sancionRepository.existsByHermanoIdAndEstado(hermano.getId(), EstadoSancionEnum.PENDIENTE)) {
 			BigDecimal total = sancionRepository.totalPendiente(hermano.getId());
 			return Optional.of("Sanción pendiente de " + Formato.euros(total));
 		}
@@ -60,9 +60,9 @@ public class RequisitosAlquiler {
 	 * Alquiler del año anterior que le da derecho a RENOVACIÓN: lo devolvió en plazo, con o sin
 	 * incidencias (las sanciones pendientes ya se comprueban aparte). Vacío = nueva alta.
 	 */
-	public Optional<Alquiler> alquilerQueDaRenovacion(Long hermanoId, Reparto reparto) {
+	public Optional<AlquilerEntity> alquilerQueDaRenovacion(Long hermanoId, RepartoEntity reparto) {
 		return alquilerRepository.findUltimoDelAnio(hermanoId, reparto.getAnio() - 1)
-				.filter(a -> a.getEstado() == EstadoAlquiler.DEVUELTO)
+				.filter(a -> a.getEstado() == EstadoAlquilerEnum.DEVUELTO)
 				.filter(a -> devolucionRepository.findByAlquilerId(a.getId())
 						.map(d -> !d.isFueraPlazo())
 						.orElse(false));

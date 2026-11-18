@@ -5,20 +5,20 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
-import es.nonomldev.gestiontunicas.reparto.entity.EstadoReparto;
+import es.nonomldev.gestiontunicas.reparto.entity.EstadoRepartoEnum;
 
-public record RepartoDto(
+public record RepartoDTO(
 		Long id,
 		Integer anio,
 		LocalDate fechaJuevesSanto,
 		boolean juevesSantoManual,
 		Integer edadMin,
 		Integer edadMax,
-		EstadoReparto estado,
-		PeriodoDevolucionDto periodoDevolucion,
+		EstadoRepartoEnum estado,
+		PeriodoDevolucionDTO periodoDevolucion,
 		String lugarDevolucion,
 		BigDecimal limosna,
-		TarifaSancionesDto tarifas,
+		TarifaSancionesDTO tarifas,
 		Integer toleranciaMedidaCm,
 		Long plantillaResguardoId,
 		String plantillaResguardoNombre,
@@ -28,5 +28,5 @@ public record RepartoDto(
 		Instant fechaCierre,
 		Instant noDevueltasProcesadasEn,
 		Instant finGraciaProcesadoEn,
-		List<JornadaDto> jornadas) {
+		List<JornadaDTO> jornadas) {
 }

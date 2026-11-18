@@ -4,10 +4,10 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import es.nonomldev.gestiontunicas.reparto.entity.PlantillaResguardo;
+import es.nonomldev.gestiontunicas.reparto.entity.PlantillaResguardoEntity;
 
-public interface PlantillaResguardoRepository extends JpaRepository<PlantillaResguardo, Long> {
+public interface PlantillaResguardoRepository extends JpaRepository<PlantillaResguardoEntity, Long> {
 
-	List<PlantillaResguardo> findAllByOrderBySubidoEnDesc();
+	List<PlantillaResguardoEntity> findAllByOrderBySubidoEnDesc();
 
 }

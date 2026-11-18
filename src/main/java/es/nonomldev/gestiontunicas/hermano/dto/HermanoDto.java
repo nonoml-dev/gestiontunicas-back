@@ -2,8 +2,8 @@ package es.nonomldev.gestiontunicas.hermano.dto;
 
 import java.time.LocalDate;
 
-/** Ficha del hermano. */
-public record HermanoDto(
+/** Detalle del hermano: los datos del Excel de Secretaría más un email y dos teléfonos. */
+public record HermanoDTO(
 		Long id,
 		String numeroHermano,
 		String nombre,
@@ -11,18 +11,10 @@ public record HermanoDto(
 		/** "Apellidos, Nombre", como en el Excel de Secretaría. */
 		String nombreCompleto,
 		LocalDate fechaNacimiento,
-		String telefono,
+		String telefono1,
+		String telefono2,
 		String email,
-		String direccion,
-		String localidad,
-		String codigoPostal,
-		TutorDto tutor,
-		/** Teléfonos del hermano y del tutor separados por " / ". */
-		String telefonos,
-		boolean aceptaEmail,
-		boolean consentimientoRgpd,
-		LocalDate fechaConsentimiento,
 		boolean activo,
-		boolean fichaCompleta,
-		String observaciones) {
+		/** Sin fecha de nacimiento no puede alquilar. */
+		boolean fichaCompleta) {
 }

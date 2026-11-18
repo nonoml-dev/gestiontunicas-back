@@ -6,14 +6,14 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import es.nonomldev.gestiontunicas.seguridad.entity.Permiso;
+import es.nonomldev.gestiontunicas.seguridad.entity.PermisoEntity;
 
-public interface PermisoRepository extends JpaRepository<Permiso, Long> {
+public interface PermisoRepository extends JpaRepository<PermisoEntity, Long> {
 
-	Optional<Permiso> findByCodigo(String codigo);
+	Optional<PermisoEntity> findByCodigo(String codigo);
 
-	List<Permiso> findByCodigoIn(Collection<String> codigos);
+	List<PermisoEntity> findByCodigoIn(Collection<String> codigos);
 
-	List<Permiso> findAllByOrderByModuloAscCodigoAsc();
+	List<PermisoEntity> findAllByOrderByModuloAscCodigoAsc();
 
 }

@@ -7,18 +7,18 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import es.nonomldev.gestiontunicas.seguridad.entity.Rol;
-import es.nonomldev.gestiontunicas.seguridad.entity.RolCodigo;
+import es.nonomldev.gestiontunicas.seguridad.entity.RolEntity;
+import es.nonomldev.gestiontunicas.seguridad.entity.RolCodigoEnum;
 
-public interface RolRepository extends JpaRepository<Rol, Long> {
+public interface RolRepository extends JpaRepository<RolEntity, Long> {
 
 	@EntityGraph(attributePaths = "permisos")
-	Optional<Rol> findByCodigo(RolCodigo codigo);
+	Optional<RolEntity> findByCodigo(RolCodigoEnum codigo);
 
-	List<Rol> findByCodigoIn(Collection<RolCodigo> codigos);
+	List<RolEntity> findByCodigoIn(Collection<RolCodigoEnum> codigos);
 
 	/** Matriz de permisos de la pantalla de Administración. */
 	@EntityGraph(attributePaths = "permisos")
-	List<Rol> findAllByOrderByCodigo();
+	List<RolEntity> findAllByOrderByCodigo();
 
 }

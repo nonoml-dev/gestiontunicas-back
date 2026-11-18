@@ -11,10 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.nonomldev.gestiontunicas.comun.exception.RecursoNoEncontradoException;
 import es.nonomldev.gestiontunicas.comun.exception.ReglaNegocioException;
-import es.nonomldev.gestiontunicas.configuracion.dto.ConfiguracionDto;
+import es.nonomldev.gestiontunicas.configuracion.dto.ConfiguracionDTO;
 import es.nonomldev.gestiontunicas.configuracion.dto.ConfiguracionRequest;
-import es.nonomldev.gestiontunicas.configuracion.entity.Configuracion;
-import es.nonomldev.gestiontunicas.configuracion.entity.TipoValor;
+import es.nonomldev.gestiontunicas.configuracion.entity.ConfiguracionEntity;
+import es.nonomldev.gestiontunicas.configuracion.entity.TipoValorEnum;
 import es.nonomldev.gestiontunicas.configuracion.mapper.ConfiguracionMapper;
 import es.nonomldev.gestiontunicas.configuracion.repository.ConfiguracionRepository;
 import es.nonomldev.gestiontunicas.configuracion.service.ConfiguracionService;
@@ -30,35 +30,35 @@ public class ConfiguracionServiceImpl implements ConfiguracionService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<ConfiguracionDto> listar(String prefijo) {
-		List<Configuracion> lista = prefijo == null || prefijo.isBlank()
+	public List<ConfiguracionDTO> listar(String prefijo) {
+		List<ConfiguracionEntity> lista = prefijo == null || prefijo.isBlank()
 				? repository.findAll()
 				: repository.findByClaveStartingWithOrderByClave(prefijo);
-		return mapper.toDtos(lista);
+		return mapper.toDTOs(lista);
 	}
 
 	@Override
-	public ConfiguracionDto actualizar(String clave, ConfiguracionRequest request) {
-		Configuracion configuracion = repository.findByClave(clave)
+	public ConfiguracionDTO actualizar(String clave, ConfiguracionRequest request) {
+		ConfiguracionEntity configuracion = repository.findByClave(clave)
 				.orElseThrow(() -> new RecursoNoEncontradoException("No existe el parámetro de configuración " + clave));
 		validar(configuracion.getTipo(), request.valor(), clave);
 		mapper.actualizar(request, configuracion);
-		return mapper.toDto(configuracion);
+		return mapper.toDTO(configuracion);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public Optional<Integer> entero(String clave) {
-		return repository.findByClave(clave).map(Configuracion::comoEntero);
+		return repository.findByClave(clave).map(ConfiguracionEntity::comoEntero);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public Optional<String> texto(String clave) {
-		return repository.findByClave(clave).map(Configuracion::getValor);
+		return repository.findByClave(clave).map(ConfiguracionEntity::getValor);
 	}
 
-	private static void validar(TipoValor tipo, String valor, String clave) {
+	private static void validar(TipoValorEnum tipo, String valor, String clave) {
 		if (valor == null || valor.isBlank()) {
 			return;
 		}

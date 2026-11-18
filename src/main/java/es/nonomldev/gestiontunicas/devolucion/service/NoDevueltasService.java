@@ -2,7 +2,7 @@ package es.nonomldev.gestiontunicas.devolucion.service;
 
 import java.util.List;
 
-import es.nonomldev.gestiontunicas.alquiler.dto.AlquilerDto;
+import es.nonomldev.gestiontunicas.alquiler.dto.AlquilerDTO;
 
 /**
  * Túnicas no devueltas, en dos pasos (C1, C2):
@@ -16,13 +16,13 @@ import es.nonomldev.gestiontunicas.alquiler.dto.AlquilerDto;
 public interface NoDevueltasService {
 
 	/** Lo que se procesará al cerrar el periodo de devolución (túnicas aún entregadas). */
-	List<AlquilerDto> pendientesFinPeriodo(Long repartoId);
+	List<AlquilerDTO> pendientesFinPeriodo(Long repartoId);
 
 	/** Devuelve cuántas túnicas se han procesado. */
 	int procesarFinPeriodo(Long repartoId);
 
 	/** Lo que se procesará al cerrar el plazo de gracia (siguen sin devolver). */
-	List<AlquilerDto> pendientesFinPlazoGracia(Long repartoId);
+	List<AlquilerDTO> pendientesFinPlazoGracia(Long repartoId);
 
 	int procesarFinPlazoGracia(Long repartoId);
 

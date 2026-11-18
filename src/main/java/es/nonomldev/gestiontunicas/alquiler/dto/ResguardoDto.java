@@ -2,7 +2,7 @@ package es.nonomldev.gestiontunicas.alquiler.dto;
 
 import java.time.Instant;
 
-public record ResguardoDto(
+public record ResguardoDTO(
 		Long id,
 		Long alquilerId,
 		Long repartoId,

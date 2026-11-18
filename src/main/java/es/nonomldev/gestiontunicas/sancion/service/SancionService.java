@@ -8,9 +8,9 @@ import org.springframework.data.domain.Pageable;
 import es.nonomldev.gestiontunicas.comun.dto.MotivoRequest;
 import es.nonomldev.gestiontunicas.sancion.dto.AjusteSancionRequest;
 import es.nonomldev.gestiontunicas.sancion.dto.PagoSancionRequest;
-import es.nonomldev.gestiontunicas.sancion.dto.SancionDto;
-import es.nonomldev.gestiontunicas.sancion.entity.ConceptoSancion;
-import es.nonomldev.gestiontunicas.sancion.entity.EstadoSancion;
+import es.nonomldev.gestiontunicas.sancion.dto.SancionDTO;
+import es.nonomldev.gestiontunicas.sancion.entity.ConceptoSancionEnum;
+import es.nonomldev.gestiontunicas.sancion.entity.EstadoSancionEnum;
 
 /**
  * Sanciones (Mayordomía). No se borran: se pagan, se condonan o se anulan con motivo.
@@ -19,16 +19,16 @@ import es.nonomldev.gestiontunicas.sancion.entity.EstadoSancion;
 public interface SancionService {
 
 	/** Filtros opcionales (null = sin filtro). */
-	Page<SancionDto> buscar(EstadoSancion estado, Long repartoId, ConceptoSancion concepto, Pageable pageable);
+	Page<SancionDTO> buscar(EstadoSancionEnum estado, Long repartoId, ConceptoSancionEnum concepto, Pageable pageable);
 
-	List<SancionDto> deHermano(Long hermanoId);
+	List<SancionDTO> deHermano(Long hermanoId);
 
-	SancionDto ajustar(Long id, AjusteSancionRequest request);
+	SancionDTO ajustar(Long id, AjusteSancionRequest request);
 
-	SancionDto pagar(Long id, PagoSancionRequest request);
+	SancionDTO pagar(Long id, PagoSancionRequest request);
 
-	SancionDto condonar(Long id, MotivoRequest request);
+	SancionDTO condonar(Long id, MotivoRequest request);
 
-	SancionDto anular(Long id, MotivoRequest request);
+	SancionDTO anular(Long id, MotivoRequest request);
 
 }

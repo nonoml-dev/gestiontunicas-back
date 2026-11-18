@@ -5,25 +5,25 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.nonomldev.gestiontunicas.alquiler.dto.SituacionHermanoDto;
-import es.nonomldev.gestiontunicas.alquiler.entity.Alquiler;
-import es.nonomldev.gestiontunicas.alquiler.entity.EstadoAlquiler;
-import es.nonomldev.gestiontunicas.alquiler.entity.TipoAlquiler;
+import es.nonomldev.gestiontunicas.alquiler.dto.SituacionHermanoDTO;
+import es.nonomldev.gestiontunicas.alquiler.entity.AlquilerEntity;
+import es.nonomldev.gestiontunicas.alquiler.entity.EstadoAlquilerEnum;
+import es.nonomldev.gestiontunicas.alquiler.entity.TipoAlquilerEnum;
 import es.nonomldev.gestiontunicas.alquiler.repository.AlquilerRepository;
 import es.nonomldev.gestiontunicas.alquiler.service.RequisitosAlquiler;
 import es.nonomldev.gestiontunicas.alquiler.service.SituacionHermanoService;
 import es.nonomldev.gestiontunicas.comun.exception.RecursoNoEncontradoException;
 import es.nonomldev.gestiontunicas.comun.exception.ReglaNegocioException;
-import es.nonomldev.gestiontunicas.hermano.entity.Hermano;
+import es.nonomldev.gestiontunicas.hermano.entity.HermanoEntity;
 import es.nonomldev.gestiontunicas.hermano.repository.HermanoRepository;
-import es.nonomldev.gestiontunicas.reparto.entity.EstadoReparto;
-import es.nonomldev.gestiontunicas.reparto.entity.EstadoReserva;
-import es.nonomldev.gestiontunicas.reparto.entity.Reparto;
-import es.nonomldev.gestiontunicas.reparto.entity.Reserva;
+import es.nonomldev.gestiontunicas.reparto.entity.EstadoRepartoEnum;
+import es.nonomldev.gestiontunicas.reparto.entity.EstadoReservaEnum;
+import es.nonomldev.gestiontunicas.reparto.entity.RepartoEntity;
+import es.nonomldev.gestiontunicas.reparto.entity.ReservaEntity;
 import es.nonomldev.gestiontunicas.reparto.repository.RepartoRepository;
 import es.nonomldev.gestiontunicas.reparto.repository.ReservaRepository;
-import es.nonomldev.gestiontunicas.tunica.entity.EstadoTunica;
-import es.nonomldev.gestiontunicas.tunica.entity.Tunica;
+import es.nonomldev.gestiontunicas.tunica.entity.EstadoTunicaEnum;
+import es.nonomldev.gestiontunicas.tunica.entity.TunicaEntity;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -38,72 +38,72 @@ public class SituacionHermanoServiceImpl implements SituacionHermanoService {
 	private final RequisitosAlquiler requisitos;
 
 	@Override
-	public SituacionHermanoDto evaluar(Long hermanoId) {
-		Hermano hermano = hermanoRepository.findById(hermanoId)
+	public SituacionHermanoDTO evaluar(Long hermanoId) {
+		HermanoEntity hermano = hermanoRepository.findById(hermanoId)
 				.orElseThrow(() -> new RecursoNoEncontradoException("el hermano", hermanoId));
-		Reparto reparto = repartoRepository.findFirstByEstado(EstadoReparto.ABIERTO)
+		RepartoEntity reparto = repartoRepository.findFirstByEstado(EstadoRepartoEnum.ABIERTO)
 				.orElseThrow(() -> new ReglaNegocioException("No hay ningún reparto abierto"));
 		Situacion s = new Situacion(hermano, reparto);
 
 		// 1. Ya tiene túnica en este reparto: solo puede cambiarla
-		Optional<Alquiler> activo = alquilerRepository.findFirstByRepartoIdAndHermanoIdAndEstado(
-				reparto.getId(), hermanoId, EstadoAlquiler.ACTIVO);
+		Optional<AlquilerEntity> activo = alquilerRepository.findFirstByRepartoIdAndHermanoIdAndEstado(
+				reparto.getId(), hermanoId, EstadoAlquilerEnum.ACTIVO);
 		if (activo.isPresent()) {
 			s.puede = true;
-			s.tipo = TipoAlquiler.CAMBIO;
+			s.tipo = TipoAlquilerEnum.CAMBIO;
 			s.alquilerActivo = activo.get();
-			return s.toDto();
+			return s.toDTO();
 		}
 
 		// 2. Requisitos: edad, ficha, veto del año, sanciones pendientes
 		Optional<String> motivo = requisitos.motivoNoPuedeAlquilar(hermano, reparto);
 		if (motivo.isPresent()) {
 			s.motivo = motivo.get();
-			return s.toDto();
+			return s.toDTO();
 		}
 		s.puede = true;
 
 		// 3. Renovación: túnica reservada, o derecho a renovar aunque la reserva ya se haya liberado
-		Optional<Reserva> reserva = reservaRepository.findByRepartoIdAndHermanoId(reparto.getId(), hermanoId)
-				.filter(r -> r.getEstado() == EstadoReserva.ACTIVA);
+		Optional<ReservaEntity> reserva = reservaRepository.findByRepartoIdAndHermanoId(reparto.getId(), hermanoId)
+				.filter(r -> r.getEstado() == EstadoReservaEnum.ACTIVA);
 		if (reserva.isPresent()) {
-			s.tipo = TipoAlquiler.RENOVACION;
+			s.tipo = TipoAlquilerEnum.RENOVACION;
 			s.tunicaReservada = reserva.get().getTunica();
-			return s.toDto();
+			return s.toDTO();
 		}
-		Optional<Alquiler> renovacion = requisitos.alquilerQueDaRenovacion(hermanoId, reparto);
+		Optional<AlquilerEntity> renovacion = requisitos.alquilerQueDaRenovacion(hermanoId, reparto);
 		if (renovacion.isPresent()) {
-			s.tipo = TipoAlquiler.RENOVACION;
+			s.tipo = TipoAlquilerEnum.RENOVACION;
 			s.tunicaAnterior = renovacion.get().getTunica();
-			return s.toDto();
+			return s.toDTO();
 		}
 
 		// 4. Nueva alta: se propone primero su antigua túnica si está libre
-		s.tipo = TipoAlquiler.NUEVA_ALTA;
+		s.tipo = TipoAlquilerEnum.NUEVA_ALTA;
 		alquilerRepository.findFirstByHermanoIdOrderByFechaEntregaDesc(hermanoId)
 				.ifPresent(a -> s.tunicaAnterior = a.getTunica());
-		return s.toDto();
+		return s.toDTO();
 	}
 
 	/** Acumula el resultado de la evaluación. */
 	private static final class Situacion {
 
-		private final Hermano hermano;
-		private final Reparto reparto;
+		private final HermanoEntity hermano;
+		private final RepartoEntity reparto;
 		private boolean puede;
-		private TipoAlquiler tipo;
+		private TipoAlquilerEnum tipo;
 		private String motivo;
-		private Alquiler alquilerActivo;
-		private Tunica tunicaReservada;
-		private Tunica tunicaAnterior;
+		private AlquilerEntity alquilerActivo;
+		private TunicaEntity tunicaReservada;
+		private TunicaEntity tunicaAnterior;
 
-		Situacion(Hermano hermano, Reparto reparto) {
+		Situacion(HermanoEntity hermano, RepartoEntity reparto) {
 			this.hermano = hermano;
 			this.reparto = reparto;
 		}
 
-		SituacionHermanoDto toDto() {
-			return new SituacionHermanoDto(
+		SituacionHermanoDTO toDTO() {
+			return new SituacionHermanoDTO(
 					hermano.getId(), reparto.getId(), reparto.getAnio(),
 					puede, puede ? tipo : null, motivo,
 					alquilerActivo == null ? null : alquilerActivo.getId(),
@@ -112,7 +112,7 @@ public class SituacionHermanoServiceImpl implements SituacionHermanoService {
 					tunicaReservada == null ? null : tunicaReservada.getCodigo(),
 					tunicaAnterior == null ? null : tunicaAnterior.getId(),
 					tunicaAnterior == null ? null : tunicaAnterior.getCodigo(),
-					tunicaAnterior != null && tunicaAnterior.getEstado() == EstadoTunica.DISPONIBLE,
+					tunicaAnterior != null && tunicaAnterior.getEstado() == EstadoTunicaEnum.DISPONIBLE,
 					hermano.tieneTelefono());
 		}
 

@@ -5,10 +5,10 @@ import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-import es.nonomldev.gestiontunicas.alquiler.dto.AlquilerDto;
-import es.nonomldev.gestiontunicas.alquiler.dto.ResguardoDto;
-import es.nonomldev.gestiontunicas.alquiler.entity.Alquiler;
-import es.nonomldev.gestiontunicas.alquiler.entity.Resguardo;
+import es.nonomldev.gestiontunicas.alquiler.dto.AlquilerDTO;
+import es.nonomldev.gestiontunicas.alquiler.dto.ResguardoDTO;
+import es.nonomldev.gestiontunicas.alquiler.entity.AlquilerEntity;
+import es.nonomldev.gestiontunicas.alquiler.entity.ResguardoEntity;
 import es.nonomldev.gestiontunicas.comun.mapper.MapStructConfig;
 
 /**
@@ -30,16 +30,16 @@ public interface AlquilerMapper {
 	@Mapping(target = "alquilerAnteriorId", source = "alquilerAnterior.id")
 	@Mapping(target = "alquilerOrigenId", source = "alquilerOrigen.id")
 	@Mapping(target = "usuarioEntrega", source = "usuarioEntrega.username")
-	AlquilerDto toDto(Alquiler alquiler);
+	AlquilerDTO toDTO(AlquilerEntity alquiler);
 
-	List<AlquilerDto> toDtos(List<Alquiler> alquileres);
+	List<AlquilerDTO> toDTOs(List<AlquilerEntity> alquileres);
 
 	@Mapping(target = "alquilerId", source = "alquiler.id")
 	@Mapping(target = "repartoId", source = "reparto.id")
 	@Mapping(target = "plantillaResguardoId", source = "plantillaResguardo.id")
 	@Mapping(target = "usuario", source = "usuario.username")
-	ResguardoDto toDto(Resguardo resguardo);
+	ResguardoDTO toDTO(ResguardoEntity resguardo);
 
-	List<ResguardoDto> toResguardoDtos(List<Resguardo> resguardos);
+	List<ResguardoDTO> toResguardoDTOs(List<ResguardoEntity> resguardos);
 
 }

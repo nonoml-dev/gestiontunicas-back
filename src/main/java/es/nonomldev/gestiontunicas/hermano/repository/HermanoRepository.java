@@ -8,31 +8,45 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import es.nonomldev.gestiontunicas.hermano.entity.Hermano;
+import es.nonomldev.gestiontunicas.hermano.entity.HermanoEntity;
 
-public interface HermanoRepository extends JpaRepository<Hermano, Long> {
+public interface HermanoRepository extends JpaRepository<HermanoEntity, Long> {
 
 	/**
-	 * Búsqueda por nombre y apellidos sin tildes ni mayúsculas, con coincidencia parcial
-	 * (usa el índice trigram de nombre_normalizado).
-	 * <p>
-	 * {@code textoNormalizado} debe venir ya normalizado con {@code Hermano.normalizar(...)}.
-	 * {@code nacidoDespuesDe}: solo los que aún no han cumplido 16 a Jueves Santo
-	 * (los mayores no salen en el listado ni en el buscador). Nulo = sin filtro.
+	 * Listado de hermanos: todos los activos, buscando por nombre y apellidos sin tildes ni mayúsculas,
+	 * con coincidencia parcial (usa el índice trigram de nombre_normalizado).
+	 * {@code textoNormalizado} debe venir ya normalizado con {@code HermanoEntity.normalizar(...)}.
+	 * El orden lo da el {@code Pageable}.
 	 */
 	@Query("""
-			select h from Hermano h
+			select h from HermanoEntity h
 			where h.activo = true
 			  and h.nombreNormalizado like concat('%', :textoNormalizado, '%')
-			  and (:nacidoDespuesDe is null or h.fechaNacimiento is null or h.fechaNacimiento > :nacidoDespuesDe)
-			order by h.apellidos, h.nombre
 			""")
-	Page<Hermano> buscar(String textoNormalizado, LocalDate nacidoDespuesDe, Pageable pageable);
+	Page<HermanoEntity> buscar(String textoNormalizado, Pageable pageable);
+
+	/**
+	 * Igual que {@link #buscar}, pero solo los que están en edad a Jueves Santo (filtro del listado):
+	 * nacidos después de {@code nacidoDespuesDe} y en {@code nacidoHasta} o antes. Los que no tienen
+	 * fecha de nacimiento no salen.
+	 * <p>
+	 * Las fechas son obligatorias: con {@code :param is null} PostgreSQL no sabe de qué tipo es una
+	 * fecha y la consulta falla. Por eso hay dos métodos en vez de un filtro opcional.
+	 */
+	@Query("""
+			select h from HermanoEntity h
+			where h.activo = true
+			  and h.nombreNormalizado like concat('%', :textoNormalizado, '%')
+			  and h.fechaNacimiento > :nacidoDespuesDe
+			  and h.fechaNacimiento <= :nacidoHasta
+			""")
+	Page<HermanoEntity> buscarEnEdad(String textoNormalizado, LocalDate nacidoDespuesDe, LocalDate nacidoHasta,
+			Pageable pageable);
 
 	/** Emparejamiento al reimportar el Excel (el número de hermano cambia con los años). */
-	List<Hermano> findByNombreNormalizadoAndFechaNacimiento(String nombreNormalizado, LocalDate fechaNacimiento);
+	List<HermanoEntity> findByNombreNormalizadoAndFechaNacimiento(String nombreNormalizado, LocalDate fechaNacimiento);
 
 	/** Posibles homónimos: mismo nombre normalizado, con cualquier fecha. */
-	List<Hermano> findByNombreNormalizado(String nombreNormalizado);
+	List<HermanoEntity> findByNombreNormalizado(String nombreNormalizado);
 
 }

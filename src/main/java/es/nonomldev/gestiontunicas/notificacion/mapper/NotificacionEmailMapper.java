@@ -6,16 +6,16 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import es.nonomldev.gestiontunicas.comun.mapper.MapStructConfig;
-import es.nonomldev.gestiontunicas.notificacion.dto.NotificacionEmailDto;
-import es.nonomldev.gestiontunicas.notificacion.entity.NotificacionEmail;
+import es.nonomldev.gestiontunicas.notificacion.dto.NotificacionEmailDTO;
+import es.nonomldev.gestiontunicas.notificacion.entity.NotificacionEmailEntity;
 
 @Mapper(config = MapStructConfig.class)
 public interface NotificacionEmailMapper {
 
 	@Mapping(target = "hermanoId", source = "hermano.id")
 	@Mapping(target = "alquilerId", source = "alquiler.id")
-	NotificacionEmailDto toDto(NotificacionEmail notificacion);
+	NotificacionEmailDTO toDTO(NotificacionEmailEntity notificacion);
 
-	List<NotificacionEmailDto> toDtos(List<NotificacionEmail> notificaciones);
+	List<NotificacionEmailDTO> toDTOs(List<NotificacionEmailEntity> notificaciones);
 
 }

@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 
 /** Importes de sanción A–F del reparto. Se usa en respuestas y en peticiones. */
-public record TarifaSancionesDto(
+public record TarifaSancionesDTO(
 		/** A: túnica, capa o antifaz deteriorada o no entregada. */
 		@NotNull @PositiveOrZero @Digits(integer = 6, fraction = 2) BigDecimal importePiezaPrincipal,
 		/** B: talega no entregada. */

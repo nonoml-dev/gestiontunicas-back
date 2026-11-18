@@ -7,23 +7,23 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 import es.nonomldev.gestiontunicas.comun.mapper.MapStructConfig;
-import es.nonomldev.gestiontunicas.reparto.dto.CambioPeriodoDevolucionDto;
-import es.nonomldev.gestiontunicas.reparto.dto.JornadaDto;
+import es.nonomldev.gestiontunicas.reparto.dto.CambioPeriodoDevolucionDTO;
+import es.nonomldev.gestiontunicas.reparto.dto.JornadaDTO;
 import es.nonomldev.gestiontunicas.reparto.dto.JornadaRequest;
-import es.nonomldev.gestiontunicas.reparto.dto.PeriodoDevolucionDto;
+import es.nonomldev.gestiontunicas.reparto.dto.PeriodoDevolucionDTO;
 import es.nonomldev.gestiontunicas.reparto.dto.PeriodoDevolucionRequest;
-import es.nonomldev.gestiontunicas.reparto.dto.PlantillaResguardoDto;
-import es.nonomldev.gestiontunicas.reparto.dto.RepartoDto;
+import es.nonomldev.gestiontunicas.reparto.dto.PlantillaResguardoDTO;
+import es.nonomldev.gestiontunicas.reparto.dto.RepartoDTO;
 import es.nonomldev.gestiontunicas.reparto.dto.RepartoRequest;
-import es.nonomldev.gestiontunicas.reparto.dto.ReservaDto;
-import es.nonomldev.gestiontunicas.reparto.dto.TarifaSancionesDto;
-import es.nonomldev.gestiontunicas.reparto.entity.CambioPeriodoDevolucion;
-import es.nonomldev.gestiontunicas.reparto.entity.Jornada;
-import es.nonomldev.gestiontunicas.reparto.entity.PeriodoDevolucion;
-import es.nonomldev.gestiontunicas.reparto.entity.PlantillaResguardo;
-import es.nonomldev.gestiontunicas.reparto.entity.Reparto;
-import es.nonomldev.gestiontunicas.reparto.entity.Reserva;
-import es.nonomldev.gestiontunicas.reparto.entity.TarifaSanciones;
+import es.nonomldev.gestiontunicas.reparto.dto.ReservaDTO;
+import es.nonomldev.gestiontunicas.reparto.dto.TarifaSancionesDTO;
+import es.nonomldev.gestiontunicas.reparto.entity.CambioPeriodoDevolucionEntity;
+import es.nonomldev.gestiontunicas.reparto.entity.JornadaEntity;
+import es.nonomldev.gestiontunicas.reparto.entity.PeriodoDevolucionEntity;
+import es.nonomldev.gestiontunicas.reparto.entity.PlantillaResguardoEntity;
+import es.nonomldev.gestiontunicas.reparto.entity.RepartoEntity;
+import es.nonomldev.gestiontunicas.reparto.entity.ReservaEntity;
+import es.nonomldev.gestiontunicas.reparto.entity.TarifaSancionesEntity;
 
 @Mapper(config = MapStructConfig.class)
 public interface RepartoMapper {
@@ -32,9 +32,9 @@ public interface RepartoMapper {
 
 	@Mapping(target = "plantillaResguardoId", source = "plantillaResguardo.id")
 	@Mapping(target = "plantillaResguardoNombre", source = "plantillaResguardo.nombre")
-	RepartoDto toDto(Reparto reparto);
+	RepartoDTO toDTO(RepartoEntity reparto);
 
-	List<RepartoDto> toDtos(List<Reparto> repartos);
+	List<RepartoDTO> toDTOs(List<RepartoEntity> repartos);
 
 	/**
 	 * Estado, fechas de proceso, numeración, plantilla y jornadas los gestiona el servicio.
@@ -51,7 +51,7 @@ public interface RepartoMapper {
 	@Mapping(target = "noDevueltasProcesadasEn", ignore = true)
 	@Mapping(target = "finGraciaProcesadoEn", ignore = true)
 	@Mapping(target = "jornadas", ignore = true)
-	Reparto toEntity(RepartoRequest request);
+	RepartoEntity toEntity(RepartoRequest request);
 
 	@Mapping(target = "fechaJuevesSanto", ignore = true)
 	@Mapping(target = "juevesSantoManual", ignore = true)
@@ -64,35 +64,35 @@ public interface RepartoMapper {
 	@Mapping(target = "noDevueltasProcesadasEn", ignore = true)
 	@Mapping(target = "finGraciaProcesadoEn", ignore = true)
 	@Mapping(target = "jornadas", ignore = true)
-	void actualizar(RepartoRequest request, @MappingTarget Reparto reparto);
+	void actualizar(RepartoRequest request, @MappingTarget RepartoEntity reparto);
 
 	// ---- Periodo de devolución y tarifas ----
 
 	@Mapping(target = "finPlazoGracia", expression = "java(periodo.finPlazoGracia())")
-	PeriodoDevolucionDto toDto(PeriodoDevolucion periodo);
+	PeriodoDevolucionDTO toDTO(PeriodoDevolucionEntity periodo);
 
-	PeriodoDevolucion toEntity(PeriodoDevolucionRequest request);
+	PeriodoDevolucionEntity toEntity(PeriodoDevolucionRequest request);
 
-	TarifaSancionesDto toDto(TarifaSanciones tarifas);
+	TarifaSancionesDTO toDTO(TarifaSancionesEntity tarifas);
 
-	TarifaSanciones toEntity(TarifaSancionesDto dto);
+	TarifaSancionesEntity toEntity(TarifaSancionesDTO dto);
 
 	// ---- Jornadas ----
 
-	JornadaDto toDto(Jornada jornada);
+	JornadaDTO toDTO(JornadaEntity jornada);
 
 	/** El reparto, el número y si es extraordinaria los asigna el servicio. */
 	@Mapping(target = "reparto", ignore = true)
 	@Mapping(target = "numero", ignore = true)
 	@Mapping(target = "extraordinaria", ignore = true)
-	Jornada toEntity(JornadaRequest request);
+	JornadaEntity toEntity(JornadaRequest request);
 
 	// ---- Historial del plazo, reservas y plantilla ----
 
 	@Mapping(target = "usuario", source = "usuario.username")
-	CambioPeriodoDevolucionDto toDto(CambioPeriodoDevolucion cambio);
+	CambioPeriodoDevolucionDTO toDTO(CambioPeriodoDevolucionEntity cambio);
 
-	List<CambioPeriodoDevolucionDto> toCambioDtos(List<CambioPeriodoDevolucion> cambios);
+	List<CambioPeriodoDevolucionDTO> toCambioDTOs(List<CambioPeriodoDevolucionEntity> cambios);
 
 	@Mapping(target = "repartoId", source = "reparto.id")
 	@Mapping(target = "hermanoId", source = "hermano.id")
@@ -100,15 +100,15 @@ public interface RepartoMapper {
 	@Mapping(target = "tunicaId", source = "tunica.id")
 	@Mapping(target = "tunicaCodigo", source = "tunica.codigo")
 	@Mapping(target = "alquilerId", source = "alquiler.id")
-	ReservaDto toDto(Reserva reserva);
+	ReservaDTO toDTO(ReservaEntity reserva);
 
-	List<ReservaDto> toReservaDtos(List<Reserva> reservas);
+	List<ReservaDTO> toReservaDTOs(List<ReservaEntity> reservas);
 
 	@Mapping(target = "subidoPor", source = "subidoPor.username")
 	@Mapping(target = "variablesDesconocidas",
 			expression = "java(es.nonomldev.gestiontunicas.reparto.service.VariablesResguardo.desconocidas(plantilla.getVariablesDetectadas()))")
-	PlantillaResguardoDto toDto(PlantillaResguardo plantilla);
+	PlantillaResguardoDTO toDTO(PlantillaResguardoEntity plantilla);
 
-	List<PlantillaResguardoDto> toPlantillaDtos(List<PlantillaResguardo> plantillas);
+	List<PlantillaResguardoDTO> toPlantillaDTOs(List<PlantillaResguardoEntity> plantillas);
 
 }

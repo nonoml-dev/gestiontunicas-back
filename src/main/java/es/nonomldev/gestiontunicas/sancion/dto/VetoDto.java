@@ -2,13 +2,13 @@ package es.nonomldev.gestiontunicas.sancion.dto;
 
 import java.time.Instant;
 
-import es.nonomldev.gestiontunicas.sancion.entity.OrigenVeto;
+import es.nonomldev.gestiontunicas.sancion.entity.OrigenVetoEnum;
 
-public record VetoDto(
+public record VetoDTO(
 		Long id,
 		Long hermanoId,
 		String hermanoNombreCompleto,
-		OrigenVeto origen,
+		OrigenVetoEnum origen,
 		/** Año del reparto en el que no puede alquilar (el veto dura un solo año). */
 		Integer anioVetado,
 		Long alquilerId,

@@ -6,11 +6,11 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import es.nonomldev.gestiontunicas.comun.mapper.MapStructConfig;
-import es.nonomldev.gestiontunicas.sancion.dto.SancionDto;
-import es.nonomldev.gestiontunicas.sancion.dto.VetoDto;
+import es.nonomldev.gestiontunicas.sancion.dto.SancionDTO;
+import es.nonomldev.gestiontunicas.sancion.dto.VetoDTO;
 import es.nonomldev.gestiontunicas.sancion.dto.VetoRequest;
-import es.nonomldev.gestiontunicas.sancion.entity.Sancion;
-import es.nonomldev.gestiontunicas.sancion.entity.Veto;
+import es.nonomldev.gestiontunicas.sancion.entity.SancionEntity;
+import es.nonomldev.gestiontunicas.sancion.entity.VetoEntity;
 
 @Mapper(config = MapStructConfig.class)
 public interface SancionMapper {
@@ -23,18 +23,18 @@ public interface SancionMapper {
 	@Mapping(target = "devolucionId", source = "devolucion.id")
 	@Mapping(target = "importeAjustado", expression = "java(sancion.importeAjustado())")
 	@Mapping(target = "usuarioResolucion", source = "usuarioResolucion.username")
-	SancionDto toDto(Sancion sancion);
+	SancionDTO toDTO(SancionEntity sancion);
 
-	List<SancionDto> toDtos(List<Sancion> sanciones);
+	List<SancionDTO> toDTOs(List<SancionEntity> sanciones);
 
 	@Mapping(target = "hermanoId", source = "hermano.id")
 	@Mapping(target = "hermanoNombreCompleto", expression = "java(veto.getHermano().getApellidos() + \", \" + veto.getHermano().getNombre())")
 	@Mapping(target = "alquilerId", source = "alquiler.id")
 	@Mapping(target = "usuario", source = "usuario.username")
 	@Mapping(target = "usuarioLevantamiento", source = "usuarioLevantamiento.username")
-	VetoDto toDto(Veto veto);
+	VetoDTO toDTO(VetoEntity veto);
 
-	List<VetoDto> toVetoDtos(List<Veto> vetos);
+	List<VetoDTO> toVetoDTOs(List<VetoEntity> vetos);
 
 	/** Veto manual: el hermano, el usuario, la fecha y el origen los asigna el servicio. */
 	@Mapping(target = "hermano", ignore = true)
@@ -46,6 +46,6 @@ public interface SancionMapper {
 	@Mapping(target = "fechaLevantamiento", ignore = true)
 	@Mapping(target = "usuarioLevantamiento", ignore = true)
 	@Mapping(target = "motivoLevantamiento", ignore = true)
-	Veto toEntity(VetoRequest request);
+	VetoEntity toEntity(VetoRequest request);
 
 }

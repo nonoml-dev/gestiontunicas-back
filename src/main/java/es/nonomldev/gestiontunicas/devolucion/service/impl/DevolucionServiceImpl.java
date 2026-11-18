@@ -3,10 +3,10 @@ package es.nonomldev.gestiontunicas.devolucion.service.impl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.nonomldev.gestiontunicas.alquiler.entity.Alquiler;
+import es.nonomldev.gestiontunicas.alquiler.entity.AlquilerEntity;
 import es.nonomldev.gestiontunicas.alquiler.repository.AlquilerRepository;
 import es.nonomldev.gestiontunicas.comun.exception.RecursoNoEncontradoException;
-import es.nonomldev.gestiontunicas.devolucion.dto.DevolucionDto;
+import es.nonomldev.gestiontunicas.devolucion.dto.DevolucionDTO;
 import es.nonomldev.gestiontunicas.devolucion.dto.DevolucionRequest;
 import es.nonomldev.gestiontunicas.devolucion.mapper.DevolucionMapper;
 import es.nonomldev.gestiontunicas.devolucion.repository.DevolucionRepository;
@@ -29,19 +29,19 @@ public class DevolucionServiceImpl implements DevolucionService {
 	private final UsuarioActualService usuarioActualService;
 
 	@Override
-	public DevolucionDto registrar(DevolucionRequest request) {
-		Alquiler alquiler = alquilerRepository.findById(request.alquilerId())
+	public DevolucionDTO registrar(DevolucionRequest request) {
+		AlquilerEntity alquiler = alquilerRepository.findById(request.alquilerId())
 				.orElseThrow(() -> new RecursoNoEncontradoException("la entrega", request.alquilerId()));
 		// Bloquea la túnica mientras se registra (dos puestos a la vez)
 		tunicaRepository.findByIdParaActualizar(alquiler.getTunica().getId());
-		return mapper.toDto(procesador.procesar(alquiler, request.revisiones(), request.observaciones(), false,
+		return mapper.toDTO(procesador.procesar(alquiler, request.revisiones(), request.observaciones(), false,
 				usuarioActualService.obtener()));
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public DevolucionDto obtenerPorAlquiler(Long alquilerId) {
-		return mapper.toDto(devolucionRepository.findByAlquilerId(alquilerId)
+	public DevolucionDTO obtenerPorAlquiler(Long alquilerId) {
+		return mapper.toDTO(devolucionRepository.findByAlquilerId(alquilerId)
 				.orElseThrow(() -> new RecursoNoEncontradoException("La entrega %d no tiene devolución".formatted(alquilerId))));
 	}
 

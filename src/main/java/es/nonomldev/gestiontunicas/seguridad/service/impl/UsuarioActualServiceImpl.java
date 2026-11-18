@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import es.nonomldev.gestiontunicas.comun.exception.ReglaNegocioException;
-import es.nonomldev.gestiontunicas.seguridad.entity.Usuario;
+import es.nonomldev.gestiontunicas.seguridad.entity.UsuarioEntity;
 import es.nonomldev.gestiontunicas.seguridad.repository.UsuarioRepository;
 import es.nonomldev.gestiontunicas.seguridad.service.UsuarioActualService;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,7 @@ public class UsuarioActualServiceImpl implements UsuarioActualService {
 	private final UsuarioRepository usuarioRepository;
 
 	@Override
-	public Usuario obtener() {
+	public UsuarioEntity obtener() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
 			throw new ReglaNegocioException("No hay ningún usuario autenticado");

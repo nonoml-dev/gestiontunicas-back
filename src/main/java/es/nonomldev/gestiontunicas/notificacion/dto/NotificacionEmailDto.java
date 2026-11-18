@@ -2,17 +2,17 @@ package es.nonomldev.gestiontunicas.notificacion.dto;
 
 import java.time.Instant;
 
-import es.nonomldev.gestiontunicas.notificacion.entity.EstadoNotificacion;
-import es.nonomldev.gestiontunicas.notificacion.entity.TipoNotificacion;
+import es.nonomldev.gestiontunicas.notificacion.entity.EstadoNotificacionEnum;
+import es.nonomldev.gestiontunicas.notificacion.entity.TipoNotificacionEnum;
 
-public record NotificacionEmailDto(
+public record NotificacionEmailDTO(
 		Long id,
 		Long hermanoId,
 		Long alquilerId,
-		TipoNotificacion tipo,
+		TipoNotificacionEnum tipo,
 		String destinatario,
 		String asunto,
-		EstadoNotificacion estado,
+		EstadoNotificacionEnum estado,
 		Integer intentos,
 		String error,
 		Instant creadoEn,

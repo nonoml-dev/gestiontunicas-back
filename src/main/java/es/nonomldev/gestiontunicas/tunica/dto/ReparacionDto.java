@@ -3,18 +3,18 @@ package es.nonomldev.gestiontunicas.tunica.dto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import es.nonomldev.gestiontunicas.tunica.entity.EstadoReparacion;
-import es.nonomldev.gestiontunicas.tunica.entity.TipoPieza;
-import es.nonomldev.gestiontunicas.tunica.entity.TipoReparacion;
+import es.nonomldev.gestiontunicas.tunica.entity.EstadoReparacionEnum;
+import es.nonomldev.gestiontunicas.tunica.entity.TipoPiezaEnum;
+import es.nonomldev.gestiontunicas.tunica.entity.TipoReparacionEnum;
 
-public record ReparacionDto(
+public record ReparacionDTO(
 		Long id,
 		Long piezaId,
-		TipoPieza tipoPieza,
+		TipoPiezaEnum tipoPieza,
 		Long devolucionId,
-		TipoReparacion tipo,
+		TipoReparacionEnum tipo,
 		String descripcion,
-		EstadoReparacion estado,
+		EstadoReparacionEnum estado,
 		LocalDate fechaInicio,
 		LocalDate fechaFin,
 		BigDecimal coste) {

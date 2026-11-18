@@ -7,24 +7,24 @@ import java.util.stream.Collectors;
 import org.mapstruct.Mapper;
 
 import es.nonomldev.gestiontunicas.comun.mapper.MapStructConfig;
-import es.nonomldev.gestiontunicas.seguridad.dto.PermisoDto;
-import es.nonomldev.gestiontunicas.seguridad.dto.RolDto;
-import es.nonomldev.gestiontunicas.seguridad.entity.Permiso;
-import es.nonomldev.gestiontunicas.seguridad.entity.Rol;
+import es.nonomldev.gestiontunicas.seguridad.dto.PermisoDTO;
+import es.nonomldev.gestiontunicas.seguridad.dto.RolDTO;
+import es.nonomldev.gestiontunicas.seguridad.entity.PermisoEntity;
+import es.nonomldev.gestiontunicas.seguridad.entity.RolEntity;
 
 @Mapper(config = MapStructConfig.class)
 public interface RolMapper {
 
-	RolDto toDto(Rol rol);
+	RolDTO toDTO(RolEntity rol);
 
-	List<RolDto> toDtos(List<Rol> roles);
+	List<RolDTO> toDTOs(List<RolEntity> roles);
 
-	PermisoDto toDto(Permiso permiso);
+	PermisoDTO toDTO(PermisoEntity permiso);
 
-	List<PermisoDto> toPermisoDtos(List<Permiso> permisos);
+	List<PermisoDTO> toPermisoDTOs(List<PermisoEntity> permisos);
 
-	default Set<String> permisosACodigos(Set<Permiso> permisos) {
-		return permisos.stream().map(Permiso::getCodigo).collect(Collectors.toSet());
+	default Set<String> permisosACodigos(Set<PermisoEntity> permisos) {
+		return permisos.stream().map(PermisoEntity::getCodigo).collect(Collectors.toSet());
 	}
 
 }

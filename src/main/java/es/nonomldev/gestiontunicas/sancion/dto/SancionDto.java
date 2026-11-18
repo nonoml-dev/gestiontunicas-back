@@ -3,10 +3,10 @@ package es.nonomldev.gestiontunicas.sancion.dto;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-import es.nonomldev.gestiontunicas.sancion.entity.ConceptoSancion;
-import es.nonomldev.gestiontunicas.sancion.entity.EstadoSancion;
+import es.nonomldev.gestiontunicas.sancion.entity.ConceptoSancionEnum;
+import es.nonomldev.gestiontunicas.sancion.entity.EstadoSancionEnum;
 
-public record SancionDto(
+public record SancionDTO(
 		Long id,
 		Long hermanoId,
 		String hermanoNombreCompleto,
@@ -14,12 +14,12 @@ public record SancionDto(
 		Integer repartoAnio,
 		Long alquilerId,
 		Long devolucionId,
-		ConceptoSancion concepto,
+		ConceptoSancionEnum concepto,
 		BigDecimal importeCalculado,
 		BigDecimal importe,
 		boolean importeAjustado,
 		String motivoAjuste,
-		EstadoSancion estado,
+		EstadoSancionEnum estado,
 		Instant fechaResolucion,
 		String usuarioResolucion,
 		String motivoResolucion,

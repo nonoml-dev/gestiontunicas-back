@@ -26,7 +26,7 @@ public record RepartoRequest(
 		@NotNull @Valid PeriodoDevolucionRequest periodoDevolucion,
 		@Size(max = 255) String lugarDevolucion,
 		@NotNull @PositiveOrZero @Digits(integer = 6, fraction = 2) BigDecimal limosna,
-		@NotNull @Valid TarifaSancionesDto tarifas,
+		@NotNull @Valid TarifaSancionesDTO tarifas,
 		@NotNull @Min(0) @Max(30) Integer toleranciaMedidaCm,
 		boolean modoTransicion,
 		/** Las 3 jornadas ordinarias, en orden. */

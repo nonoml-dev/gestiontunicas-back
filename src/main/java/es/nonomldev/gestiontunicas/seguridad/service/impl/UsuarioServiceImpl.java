@@ -12,12 +12,12 @@ import org.springframework.transaction.annotation.Transactional;
 import es.nonomldev.gestiontunicas.comun.exception.RecursoNoEncontradoException;
 import es.nonomldev.gestiontunicas.comun.exception.ReglaNegocioException;
 import es.nonomldev.gestiontunicas.seguridad.dto.CambioPasswordRequest;
-import es.nonomldev.gestiontunicas.seguridad.dto.UsuarioCreadoDto;
-import es.nonomldev.gestiontunicas.seguridad.dto.UsuarioDto;
+import es.nonomldev.gestiontunicas.seguridad.dto.UsuarioCreadoDTO;
+import es.nonomldev.gestiontunicas.seguridad.dto.UsuarioDTO;
 import es.nonomldev.gestiontunicas.seguridad.dto.UsuarioRequest;
-import es.nonomldev.gestiontunicas.seguridad.entity.Rol;
-import es.nonomldev.gestiontunicas.seguridad.entity.RolCodigo;
-import es.nonomldev.gestiontunicas.seguridad.entity.Usuario;
+import es.nonomldev.gestiontunicas.seguridad.entity.RolEntity;
+import es.nonomldev.gestiontunicas.seguridad.entity.RolCodigoEnum;
+import es.nonomldev.gestiontunicas.seguridad.entity.UsuarioEntity;
 import es.nonomldev.gestiontunicas.seguridad.mapper.UsuarioMapper;
 import es.nonomldev.gestiontunicas.seguridad.repository.RefreshTokenRepository;
 import es.nonomldev.gestiontunicas.seguridad.repository.RolRepository;
@@ -44,32 +44,32 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<UsuarioDto> listar() {
-		return usuarioRepository.findAll().stream().map(usuarioMapper::toDto).toList();
+	public List<UsuarioDTO> listar() {
+		return usuarioRepository.findAll().stream().map(usuarioMapper::toDTO).toList();
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public UsuarioDto obtener(Long id) {
-		return usuarioMapper.toDto(buscar(id));
+	public UsuarioDTO obtener(Long id) {
+		return usuarioMapper.toDTO(buscar(id));
 	}
 
 	@Override
-	public UsuarioCreadoDto crear(UsuarioRequest request) {
+	public UsuarioCreadoDTO crear(UsuarioRequest request) {
 		if (usuarioRepository.existsByUsername(request.username())) {
 			throw new ReglaNegocioException("Ya existe un usuario con el nombre " + request.username());
 		}
-		Usuario usuario = usuarioMapper.toEntity(request);
+		UsuarioEntity usuario = usuarioMapper.toEntity(request);
 		usuario.setRoles(roles(request.roles()));
 		String temporal = generarPasswordTemporal();
 		usuario.setPasswordHash(passwordEncoder.encode(temporal));
 		usuario.setDebeCambiarPassword(true);
-		return new UsuarioCreadoDto(usuarioMapper.toDto(usuarioRepository.save(usuario)), temporal);
+		return new UsuarioCreadoDTO(usuarioMapper.toDTO(usuarioRepository.save(usuario)), temporal);
 	}
 
 	@Override
-	public UsuarioDto actualizar(Long id, UsuarioRequest request) {
-		Usuario usuario = buscar(id);
+	public UsuarioDTO actualizar(Long id, UsuarioRequest request) {
+		UsuarioEntity usuario = buscar(id);
 		if (usuarioRepository.existsByUsernameAndIdNot(request.username(), id)) {
 			throw new ReglaNegocioException("Ya existe un usuario con el nombre " + request.username());
 		}
@@ -79,24 +79,24 @@ public class UsuarioServiceImpl implements UsuarioService {
 		if (seDesactiva) {
 			refreshTokenRepository.revocarTodosDeUsuario(id);
 		}
-		return usuarioMapper.toDto(usuario);
+		return usuarioMapper.toDTO(usuario);
 	}
 
 	@Override
-	public UsuarioCreadoDto restablecerPassword(Long id) {
-		Usuario usuario = buscar(id);
+	public UsuarioCreadoDTO restablecerPassword(Long id) {
+		UsuarioEntity usuario = buscar(id);
 		String temporal = generarPasswordTemporal();
 		usuario.setPasswordHash(passwordEncoder.encode(temporal));
 		usuario.setDebeCambiarPassword(true);
 		usuario.setIntentosFallidos(0);
 		usuario.setBloqueadoHasta(null);
 		refreshTokenRepository.revocarTodosDeUsuario(id);
-		return new UsuarioCreadoDto(usuarioMapper.toDto(usuario), temporal);
+		return new UsuarioCreadoDTO(usuarioMapper.toDTO(usuario), temporal);
 	}
 
 	@Override
 	public void cambiarPasswordPropia(CambioPasswordRequest request) {
-		Usuario usuario = usuarioActualService.obtener();
+		UsuarioEntity usuario = usuarioActualService.obtener();
 		if (!passwordEncoder.matches(request.passwordActual(), usuario.getPasswordHash())) {
 			throw new ReglaNegocioException("La contraseña actual no es correcta");
 		}
@@ -107,12 +107,12 @@ public class UsuarioServiceImpl implements UsuarioService {
 		usuario.setDebeCambiarPassword(false);
 	}
 
-	private Usuario buscar(Long id) {
+	private UsuarioEntity buscar(Long id) {
 		return usuarioRepository.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("el usuario", id));
 	}
 
-	private Set<Rol> roles(Set<RolCodigo> codigos) {
-		List<Rol> roles = rolRepository.findByCodigoIn(codigos);
+	private Set<RolEntity> roles(Set<RolCodigoEnum> codigos) {
+		List<RolEntity> roles = rolRepository.findByCodigoIn(codigos);
 		if (roles.size() != codigos.size()) {
 			throw new ReglaNegocioException("Alguno de los roles indicados no existe");
 		}

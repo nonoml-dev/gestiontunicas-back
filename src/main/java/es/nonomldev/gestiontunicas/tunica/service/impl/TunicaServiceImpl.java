@@ -14,14 +14,14 @@ import org.springframework.transaction.annotation.Transactional;
 import es.nonomldev.gestiontunicas.comun.dto.MotivoRequest;
 import es.nonomldev.gestiontunicas.comun.exception.RecursoNoEncontradoException;
 import es.nonomldev.gestiontunicas.comun.exception.ReglaNegocioException;
-import es.nonomldev.gestiontunicas.reparto.entity.EstadoReparto;
-import es.nonomldev.gestiontunicas.reparto.entity.Reparto;
+import es.nonomldev.gestiontunicas.reparto.entity.EstadoRepartoEnum;
+import es.nonomldev.gestiontunicas.reparto.entity.RepartoEntity;
 import es.nonomldev.gestiontunicas.reparto.repository.RepartoRepository;
-import es.nonomldev.gestiontunicas.tunica.dto.TunicaDto;
+import es.nonomldev.gestiontunicas.tunica.dto.TunicaDTO;
 import es.nonomldev.gestiontunicas.tunica.dto.TunicaRequest;
-import es.nonomldev.gestiontunicas.tunica.dto.TunicaResumenDto;
-import es.nonomldev.gestiontunicas.tunica.entity.EstadoTunica;
-import es.nonomldev.gestiontunicas.tunica.entity.Tunica;
+import es.nonomldev.gestiontunicas.tunica.dto.TunicaResumenDTO;
+import es.nonomldev.gestiontunicas.tunica.entity.EstadoTunicaEnum;
+import es.nonomldev.gestiontunicas.tunica.entity.TunicaEntity;
 import es.nonomldev.gestiontunicas.tunica.mapper.TunicaMapper;
 import es.nonomldev.gestiontunicas.tunica.repository.TunicaRepository;
 import es.nonomldev.gestiontunicas.tunica.service.TunicaService;
@@ -36,8 +36,8 @@ public class TunicaServiceImpl implements TunicaService {
 	private static final int TOLERANCIA_POR_DEFECTO = 3;
 
 	/** Estados en los que la túnica está fuera de casa: no se puede dar de baja. */
-	private static final Set<EstadoTunica> EN_USO = EnumSet.of(EstadoTunica.RESERVADA, EstadoTunica.ALQUILADA,
-			EstadoTunica.NO_DEVUELTA, EstadoTunica.PROPIEDAD_HERMANO);
+	private static final Set<EstadoTunicaEnum> EN_USO = EnumSet.of(EstadoTunicaEnum.RESERVADA, EstadoTunicaEnum.ALQUILADA,
+			EstadoTunicaEnum.NO_DEVUELTA, EstadoTunicaEnum.PROPIEDAD_HERMANO);
 
 	private final TunicaRepository tunicaRepository;
 	private final RepartoRepository repartoRepository;
@@ -46,36 +46,36 @@ public class TunicaServiceImpl implements TunicaService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public Page<TunicaResumenDto> buscar(Set<EstadoTunica> estados, Integer medidaMin, Integer medidaMax,
+	public Page<TunicaResumenDTO> buscar(Set<EstadoTunicaEnum> estados, Integer medidaMin, Integer medidaMax,
 			Pageable pageable) {
-		Set<EstadoTunica> filtro = estados == null || estados.isEmpty()
-				? EnumSet.complementOf(EnumSet.of(EstadoTunica.PROPIEDAD_HERMANO))
+		Set<EstadoTunicaEnum> filtro = estados == null || estados.isEmpty()
+				? EnumSet.complementOf(EnumSet.of(EstadoTunicaEnum.PROPIEDAD_HERMANO))
 				: estados;
-		return tunicaRepository.buscar(filtro, medidaMin, medidaMax, pageable).map(mapper::toResumenDto);
+		return tunicaRepository.buscar(filtro, medidaMin, medidaMax, pageable).map(mapper::toResumenDTO);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public TunicaDto obtener(Long id) {
-		return mapper.toDto(tunicaRepository.findWithPiezasById(id)
+	public TunicaDTO obtener(Long id) {
+		return mapper.toDTO(tunicaRepository.findWithPiezasById(id)
 				.orElseThrow(() -> new RecursoNoEncontradoException("la túnica", id)));
 	}
 
 	@Override
-	public TunicaDto crear(TunicaRequest request) {
+	public TunicaDTO crear(TunicaRequest request) {
 		comprobarCodigoLibre(request.codigo());
-		Tunica tunica = mapper.toEntity(request);
-		tunica.setEstado(EstadoTunica.DISPONIBLE);
+		TunicaEntity tunica = mapper.toEntity(request);
+		tunica.setEstado(EstadoTunicaEnum.DISPONIBLE);
 		if (tunica.getFechaAlta() == null) {
 			tunica.setFechaAlta(LocalDate.now(clock));
 		}
 		tunica.crearPiezas();
-		return mapper.toDto(tunicaRepository.save(tunica));
+		return mapper.toDTO(tunicaRepository.save(tunica));
 	}
 
 	@Override
-	public TunicaDto actualizar(Long id, TunicaRequest request) {
-		Tunica tunica = buscarEntidad(id);
+	public TunicaDTO actualizar(Long id, TunicaRequest request) {
+		TunicaEntity tunica = buscarEntidad(id);
 		if (!tunica.enInventario()) {
 			throw new ReglaNegocioException("La túnica %s es propiedad de un hermano y no se puede modificar"
 					.formatted(tunica.getCodigo()));
@@ -85,36 +85,36 @@ public class TunicaServiceImpl implements TunicaService {
 		}
 		mapper.actualizar(request, tunica);
 		tunicaRepository.flush(); // refresca la medida total, que calcula la BD
-		return mapper.toDto(tunica);
+		return mapper.toDTO(tunica);
 	}
 
 	@Override
-	public TunicaDto darDeBaja(Long id, MotivoRequest request) {
-		Tunica tunica = buscarEntidad(id);
+	public TunicaDTO darDeBaja(Long id, MotivoRequest request) {
+		TunicaEntity tunica = buscarEntidad(id);
 		if (EN_USO.contains(tunica.getEstado())) {
 			throw new ReglaNegocioException("La túnica %s no se puede dar de baja: está %s"
 					.formatted(tunica.getCodigo(), tunica.getEstado().name().toLowerCase().replace('_', ' ')));
 		}
-		tunica.setEstado(EstadoTunica.BAJA);
+		tunica.setEstado(EstadoTunicaEnum.BAJA);
 		tunica.setFechaBaja(LocalDate.now(clock));
 		tunica.setMotivoBaja(request.motivo());
-		return mapper.toDto(tunica);
+		return mapper.toDTO(tunica);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public boolean codigoFueDeHermano(String codigo) {
-		return tunicaRepository.existsByCodigoAndEstado(codigo, EstadoTunica.PROPIEDAD_HERMANO);
+		return tunicaRepository.existsByCodigoAndEstado(codigo, EstadoTunicaEnum.PROPIEDAD_HERMANO);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<TunicaResumenDto> proponer(int alturaCm, Integer toleranciaCm) {
+	public List<TunicaResumenDTO> proponer(int alturaCm, Integer toleranciaCm) {
 		int tolerancia = toleranciaCm != null ? toleranciaCm
-				: repartoRepository.findFirstByEstado(EstadoReparto.ABIERTO)
-						.map(Reparto::getToleranciaMedidaCm)
+				: repartoRepository.findFirstByEstado(EstadoRepartoEnum.ABIERTO)
+						.map(RepartoEntity::getToleranciaMedidaCm)
 						.orElse(TOLERANCIA_POR_DEFECTO);
-		return mapper.toResumenDtos(tunicaRepository.proponerPorAltura(alturaCm, tolerancia));
+		return mapper.toResumenDTOs(tunicaRepository.proponerPorAltura(alturaCm, tolerancia));
 	}
 
 	private void comprobarCodigoLibre(String codigo) {
@@ -123,7 +123,7 @@ public class TunicaServiceImpl implements TunicaService {
 		}
 	}
 
-	private Tunica buscarEntidad(Long id) {
+	private TunicaEntity buscarEntidad(Long id) {
 		return tunicaRepository.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("la túnica", id));
 	}
 

@@ -7,17 +7,17 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
-import es.nonomldev.gestiontunicas.alquiler.entity.Alquiler;
-import es.nonomldev.gestiontunicas.devolucion.entity.Devolucion;
-import es.nonomldev.gestiontunicas.reparto.entity.Reparto;
-import es.nonomldev.gestiontunicas.sancion.entity.ConceptoSancion;
-import es.nonomldev.gestiontunicas.sancion.entity.EstadoSancion;
-import es.nonomldev.gestiontunicas.sancion.entity.OrigenVeto;
-import es.nonomldev.gestiontunicas.sancion.entity.Sancion;
-import es.nonomldev.gestiontunicas.sancion.entity.Veto;
+import es.nonomldev.gestiontunicas.alquiler.entity.AlquilerEntity;
+import es.nonomldev.gestiontunicas.devolucion.entity.DevolucionEntity;
+import es.nonomldev.gestiontunicas.reparto.entity.RepartoEntity;
+import es.nonomldev.gestiontunicas.sancion.entity.ConceptoSancionEnum;
+import es.nonomldev.gestiontunicas.sancion.entity.EstadoSancionEnum;
+import es.nonomldev.gestiontunicas.sancion.entity.OrigenVetoEnum;
+import es.nonomldev.gestiontunicas.sancion.entity.SancionEntity;
+import es.nonomldev.gestiontunicas.sancion.entity.VetoEntity;
 import es.nonomldev.gestiontunicas.sancion.repository.SancionRepository;
 import es.nonomldev.gestiontunicas.sancion.repository.VetoRepository;
-import es.nonomldev.gestiontunicas.seguridad.entity.Usuario;
+import es.nonomldev.gestiontunicas.seguridad.entity.UsuarioEntity;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -33,13 +33,13 @@ public class GeneradorSanciones {
 	private final Clock clock;
 
 	/** Crea la sanción con el importe del reparto, salvo que ya exista ese concepto para el alquiler. */
-	public Optional<Sancion> sancionar(Alquiler alquiler, Devolucion devolucion, ConceptoSancion concepto) {
-		if (sancionRepository.existsByAlquilerIdAndConceptoAndEstadoNot(alquiler.getId(), concepto, EstadoSancion.ANULADA)) {
+	public Optional<SancionEntity> sancionar(AlquilerEntity alquiler, DevolucionEntity devolucion, ConceptoSancionEnum concepto) {
+		if (sancionRepository.existsByAlquilerIdAndConceptoAndEstadoNot(alquiler.getId(), concepto, EstadoSancionEnum.ANULADA)) {
 			return Optional.empty();
 		}
-		Reparto reparto = alquiler.getReparto();
+		RepartoEntity reparto = alquiler.getReparto();
 		BigDecimal importe = reparto.getTarifas().importe(concepto);
-		Sancion sancion = new Sancion();
+		SancionEntity sancion = new SancionEntity();
 		sancion.setHermano(alquiler.getHermano());
 		sancion.setReparto(reparto);
 		sancion.setAlquiler(alquiler);
@@ -47,19 +47,19 @@ public class GeneradorSanciones {
 		sancion.setConcepto(concepto);
 		sancion.setImporteCalculado(importe);
 		sancion.setImporte(importe);
-		sancion.setEstado(EstadoSancion.PENDIENTE);
+		sancion.setEstado(EstadoSancionEnum.PENDIENTE);
 		return Optional.of(sancionRepository.save(sancion));
 	}
 
 	/** Veto automático por no devolver en plazo: solo para el reparto del año siguiente. */
-	public Optional<Veto> vetarPorNoDevolverEnPlazo(Alquiler alquiler, Usuario usuario) {
+	public Optional<VetoEntity> vetarPorNoDevolverEnPlazo(AlquilerEntity alquiler, UsuarioEntity usuario) {
 		if (vetoRepository.existsByAlquilerId(alquiler.getId())) {
 			return Optional.empty();
 		}
-		Reparto reparto = alquiler.getReparto();
-		Veto veto = new Veto();
+		RepartoEntity reparto = alquiler.getReparto();
+		VetoEntity veto = new VetoEntity();
 		veto.setHermano(alquiler.getHermano());
-		veto.setOrigen(OrigenVeto.NO_DEVOLUCION_EN_PLAZO);
+		veto.setOrigen(OrigenVetoEnum.NO_DEVOLUCION_EN_PLAZO);
 		veto.setAnioVetado(reparto.getAnio() + 1);
 		veto.setAlquiler(alquiler);
 		veto.setMotivo("No devolvió la túnica %s en plazo en el reparto %d"

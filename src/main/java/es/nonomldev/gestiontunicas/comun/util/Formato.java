@@ -5,7 +5,7 @@ import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
-import es.nonomldev.gestiontunicas.hermano.entity.Hermano;
+import es.nonomldev.gestiontunicas.hermano.entity.HermanoEntity;
 
 /** Formatos de texto que se muestran al usuario (mensajes de motivo, resguardo...). */
 public final class Formato {
@@ -23,7 +23,7 @@ public final class Formato {
 	}
 
 	/** "Apellidos, Nombre", como en el Excel de Secretaría. */
-	public static String nombreCompleto(Hermano hermano) {
+	public static String nombreCompleto(HermanoEntity hermano) {
 		return hermano.getApellidos() + ", " + hermano.getNombre();
 	}
 

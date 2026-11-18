@@ -6,21 +6,21 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import es.nonomldev.gestiontunicas.comun.mapper.MapStructConfig;
-import es.nonomldev.gestiontunicas.importacion.dto.ImportacionDto;
-import es.nonomldev.gestiontunicas.importacion.dto.ImportacionFilaDto;
-import es.nonomldev.gestiontunicas.importacion.entity.Importacion;
-import es.nonomldev.gestiontunicas.importacion.entity.ImportacionFila;
+import es.nonomldev.gestiontunicas.hermano.mapper.HermanoMapper;
+import es.nonomldev.gestiontunicas.importacion.dto.ImportacionDTO;
+import es.nonomldev.gestiontunicas.importacion.dto.ImportacionFilaDTO;
+import es.nonomldev.gestiontunicas.importacion.entity.ImportacionEntity;
+import es.nonomldev.gestiontunicas.importacion.entity.ImportacionFilaEntity;
 
-@Mapper(config = MapStructConfig.class)
+@Mapper(config = MapStructConfig.class, uses = HermanoMapper.class)
 public interface ImportacionMapper {
 
 	@Mapping(target = "repartoId", source = "reparto.id")
 	@Mapping(target = "usuario", source = "usuario.username")
-	ImportacionDto toDto(Importacion importacion);
+	ImportacionDTO toDTO(ImportacionEntity importacion);
 
-	@Mapping(target = "hermanoCoincidenteId", source = "hermanoCoincidente.id")
-	ImportacionFilaDto toDto(ImportacionFila fila);
+	ImportacionFilaDTO toDTO(ImportacionFilaEntity fila);
 
-	List<ImportacionFilaDto> toFilaDtos(List<ImportacionFila> filas);
+	List<ImportacionFilaDTO> toFilaDTOs(List<ImportacionFilaEntity> filas);
 
 }

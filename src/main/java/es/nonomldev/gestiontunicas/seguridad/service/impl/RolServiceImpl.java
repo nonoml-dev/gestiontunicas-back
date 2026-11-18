@@ -8,11 +8,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.nonomldev.gestiontunicas.comun.exception.RecursoNoEncontradoException;
 import es.nonomldev.gestiontunicas.comun.exception.ReglaNegocioException;
-import es.nonomldev.gestiontunicas.seguridad.dto.PermisoDto;
-import es.nonomldev.gestiontunicas.seguridad.dto.RolDto;
+import es.nonomldev.gestiontunicas.seguridad.dto.PermisoDTO;
+import es.nonomldev.gestiontunicas.seguridad.dto.RolDTO;
 import es.nonomldev.gestiontunicas.seguridad.dto.RolPermisosRequest;
-import es.nonomldev.gestiontunicas.seguridad.entity.Permiso;
-import es.nonomldev.gestiontunicas.seguridad.entity.Rol;
+import es.nonomldev.gestiontunicas.seguridad.entity.PermisoEntity;
+import es.nonomldev.gestiontunicas.seguridad.entity.RolEntity;
 import es.nonomldev.gestiontunicas.seguridad.mapper.RolMapper;
 import es.nonomldev.gestiontunicas.seguridad.repository.PermisoRepository;
 import es.nonomldev.gestiontunicas.seguridad.repository.RolRepository;
@@ -30,25 +30,25 @@ public class RolServiceImpl implements RolService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<RolDto> listar() {
-		return rolMapper.toDtos(rolRepository.findAllByOrderByCodigo());
+	public List<RolDTO> listar() {
+		return rolMapper.toDTOs(rolRepository.findAllByOrderByCodigo());
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<PermisoDto> listarPermisos() {
-		return rolMapper.toPermisoDtos(permisoRepository.findAllByOrderByModuloAscCodigoAsc());
+	public List<PermisoDTO> listarPermisos() {
+		return rolMapper.toPermisoDTOs(permisoRepository.findAllByOrderByModuloAscCodigoAsc());
 	}
 
 	@Override
-	public RolDto actualizarPermisos(Long rolId, RolPermisosRequest request) {
-		Rol rol = rolRepository.findById(rolId).orElseThrow(() -> new RecursoNoEncontradoException("el rol", rolId));
-		List<Permiso> permisos = permisoRepository.findByCodigoIn(request.permisos());
+	public RolDTO actualizarPermisos(Long rolId, RolPermisosRequest request) {
+		RolEntity rol = rolRepository.findById(rolId).orElseThrow(() -> new RecursoNoEncontradoException("el rol", rolId));
+		List<PermisoEntity> permisos = permisoRepository.findByCodigoIn(request.permisos());
 		if (permisos.size() != request.permisos().size()) {
 			throw new ReglaNegocioException("Alguno de los permisos indicados no existe");
 		}
 		rol.setPermisos(new HashSet<>(permisos));
-		return rolMapper.toDto(rol);
+		return rolMapper.toDTO(rol);
 	}
 
 }

@@ -2,7 +2,7 @@ package es.nonomldev.gestiontunicas.tunica.service;
 
 import java.util.List;
 
-import es.nonomldev.gestiontunicas.tunica.dto.ReparacionDto;
+import es.nonomldev.gestiontunicas.tunica.dto.ReparacionDTO;
 import es.nonomldev.gestiontunicas.tunica.dto.ReparacionRequest;
 
 /**
@@ -11,11 +11,11 @@ import es.nonomldev.gestiontunicas.tunica.dto.ReparacionRequest;
  */
 public interface ReparacionService {
 
-	List<ReparacionDto> deTunica(Long tunicaId);
+	List<ReparacionDTO> deTunica(Long tunicaId);
 
-	ReparacionDto registrar(Long tunicaId, ReparacionRequest request);
+	ReparacionDTO registrar(Long tunicaId, ReparacionRequest request);
 
 	/** Al finalizar la última reparación pendiente, la túnica vuelve a estar disponible. */
-	ReparacionDto actualizar(Long id, ReparacionRequest request);
+	ReparacionDTO actualizar(Long id, ReparacionRequest request);
 
 }
