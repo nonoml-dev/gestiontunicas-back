@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.nonomldev.gestiontunicas.comun.exception.RecursoNoEncontradoException;
 import es.nonomldev.gestiontunicas.comun.exception.ReglaNegocioException;
-import es.nonomldev.gestiontunicas.seguridad.dto.CambioPasswordRequest;
 import es.nonomldev.gestiontunicas.seguridad.dto.UsuarioCreadoDTO;
 import es.nonomldev.gestiontunicas.seguridad.dto.UsuarioDTO;
 import es.nonomldev.gestiontunicas.seguridad.dto.UsuarioRequest;
@@ -23,7 +22,6 @@ import es.nonomldev.gestiontunicas.seguridad.mapper.UsuarioMapper;
 import es.nonomldev.gestiontunicas.seguridad.repository.RefreshTokenRepository;
 import es.nonomldev.gestiontunicas.seguridad.repository.RolRepository;
 import es.nonomldev.gestiontunicas.seguridad.repository.UsuarioRepository;
-import es.nonomldev.gestiontunicas.seguridad.service.UsuarioActualService;
 import es.nonomldev.gestiontunicas.seguridad.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
 
@@ -41,7 +39,6 @@ public class UsuarioServiceImpl implements UsuarioService {
 	private final RefreshTokenRepository refreshTokenRepository;
 	private final UsuarioMapper usuarioMapper;
 	private final PasswordEncoder passwordEncoder;
-	private final UsuarioActualService usuarioActualService;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -111,19 +108,6 @@ public class UsuarioServiceImpl implements UsuarioService {
 		usuario.setBloqueadoHasta(null);
 		refreshTokenRepository.revocarTodosDeUsuario(id);
 		return new UsuarioCreadoDTO(usuarioMapper.toDTO(usuario), temporal);
-	}
-
-	@Override
-	public void cambiarPasswordPropia(CambioPasswordRequest request) {
-		UsuarioEntity usuario = usuarioActualService.obtener();
-		if (!passwordEncoder.matches(request.passwordActual(), usuario.getPasswordHash())) {
-			throw new ReglaNegocioException("La contraseña actual no es correcta");
-		}
-		if (request.passwordActual().equals(request.passwordNueva())) {
-			throw new ReglaNegocioException("La contraseña nueva tiene que ser distinta de la actual");
-		}
-		usuario.setPasswordHash(passwordEncoder.encode(request.passwordNueva()));
-		usuario.setDebeCambiarPassword(false);
 	}
 
 	private UsuarioEntity buscar(Long id) {

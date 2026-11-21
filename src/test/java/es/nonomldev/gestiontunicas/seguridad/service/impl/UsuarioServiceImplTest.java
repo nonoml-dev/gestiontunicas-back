@@ -31,7 +31,6 @@ import es.nonomldev.gestiontunicas.seguridad.mapper.UsuarioMapper;
 import es.nonomldev.gestiontunicas.seguridad.repository.RefreshTokenRepository;
 import es.nonomldev.gestiontunicas.seguridad.repository.RolRepository;
 import es.nonomldev.gestiontunicas.seguridad.repository.UsuarioRepository;
-import es.nonomldev.gestiontunicas.seguridad.service.UsuarioActualService;
 
 class UsuarioServiceImplTest {
 
@@ -42,7 +41,6 @@ class UsuarioServiceImplTest {
 	private final RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
 	private final UsuarioMapper usuarioMapper = mock(UsuarioMapper.class);
 	private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(4);
-	private final UsuarioActualService usuarioActualService = mock(UsuarioActualService.class);
 
 	private final RolEntity rolAdmin = rol(RolCodigoEnum.ADMIN);
 	private final RolEntity rolPrioste = rol(RolCodigoEnum.PRIOSTE);
@@ -53,7 +51,7 @@ class UsuarioServiceImplTest {
 	@BeforeEach
 	void preparar() {
 		service = new UsuarioServiceImpl(usuarioRepository, rolRepository, refreshTokenRepository, usuarioMapper,
-				passwordEncoder, usuarioActualService);
+				passwordEncoder);
 
 		usuario = new UsuarioEntity();
 		ReflectionTestUtils.setField(usuario, "id", ID);

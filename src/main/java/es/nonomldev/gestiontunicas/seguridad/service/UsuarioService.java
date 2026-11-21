@@ -2,7 +2,6 @@ package es.nonomldev.gestiontunicas.seguridad.service;
 
 import java.util.List;
 
-import es.nonomldev.gestiontunicas.seguridad.dto.CambioPasswordRequest;
 import es.nonomldev.gestiontunicas.seguridad.dto.UsuarioCreadoDTO;
 import es.nonomldev.gestiontunicas.seguridad.dto.UsuarioDTO;
 import es.nonomldev.gestiontunicas.seguridad.dto.UsuarioRequest;
@@ -21,8 +20,5 @@ public interface UsuarioService {
 
 	/** Genera una contraseña temporal nueva, desbloquea al usuario y cierra sus sesiones. */
 	UsuarioCreadoDTO restablecerPassword(Long id);
-
-	/** Cambio de contraseña del usuario autenticado. */
-	void cambiarPasswordPropia(CambioPasswordRequest request);
 
 }

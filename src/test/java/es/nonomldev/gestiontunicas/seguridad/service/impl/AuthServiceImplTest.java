@@ -30,8 +30,10 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 
 import es.nonomldev.gestiontunicas.comun.exception.CredencialesInvalidasException;
+import es.nonomldev.gestiontunicas.comun.exception.ReglaNegocioException;
 import es.nonomldev.gestiontunicas.configuracion.service.ConfiguracionService;
 import es.nonomldev.gestiontunicas.seguridad.config.JwtProperties;
+import es.nonomldev.gestiontunicas.seguridad.dto.CambioPasswordRequest;
 import es.nonomldev.gestiontunicas.seguridad.dto.LoginDTO;
 import es.nonomldev.gestiontunicas.seguridad.dto.LoginRequest;
 import es.nonomldev.gestiontunicas.seguridad.entity.CargoUsuarioEnum;
@@ -199,6 +201,76 @@ class AuthServiceImplTest {
 		service.cerrarSesion("inventado");
 
 		assertThat(guardados.getFirst().isRevocado()).isTrue();
+	}
+
+	@Test
+	void elTokenIndicaSiLaContrasenaEstaPendienteDeCambiar() {
+		admin.setDebeCambiarPassword(true);
+		assertThat(claims(service.login(new LoginRequest("admin", "1234"), IP)).getClaimAsBoolean("debe_cambiar_password"))
+				.isTrue();
+
+		admin.setDebeCambiarPassword(false);
+		assertThat(claims(service.login(new LoginRequest("admin", "1234"), IP)).hasClaim("debe_cambiar_password"))
+				.isFalse();
+	}
+
+	@Test
+	void cambiarLaContrasenaCierraLasSesionesYAbreUnaSinPendiente() {
+		admin.setDebeCambiarPassword(true);
+		admin.setIntentosFallidos(2);
+
+		LoginDTO sesion = service.cambiarPassword("admin", new CambioPasswordRequest("1234", "contrasena-nueva"));
+
+		assertThat(passwordEncoder.matches("contrasena-nueva", admin.getPasswordHash())).isTrue();
+		assertThat(admin.isDebeCambiarPassword()).isFalse();
+		assertThat(admin.getIntentosFallidos()).isZero();
+		assertThat(claims(sesion).hasClaim("debe_cambiar_password")).isFalse();
+		verify(refreshTokenRepository).revocarTodosDeUsuario(admin.getId());
+	}
+
+	@Test
+	void conLaContrasenaActualIncorrectaNoCambiaYCuentaComoIntento() {
+		String hash = admin.getPasswordHash();
+
+		assertThatThrownBy(() -> service.cambiarPassword("admin", new CambioPasswordRequest("mala", "contrasena-nueva")))
+				.isInstanceOf(ReglaNegocioException.class).hasMessageContaining("actual no es correcta");
+
+		assertThat(admin.getPasswordHash()).isEqualTo(hash);
+		assertThat(admin.getIntentosFallidos()).isEqualTo(1);
+	}
+
+	@Test
+	void laContrasenaNuevaTieneQueSerDistinta() {
+		admin.setPasswordHash(passwordEncoder.encode("contrasena-actual"));
+
+		assertThatThrownBy(() -> service.cambiarPassword("admin",
+				new CambioPasswordRequest("contrasena-actual", "contrasena-actual")))
+				.isInstanceOf(ReglaNegocioException.class).hasMessageContaining("distinta");
+		assertThat(admin.isDebeCambiarPassword()).isTrue();
+	}
+
+	@Test
+	void rechazaUnaContrasenaDeMasDe72Bytes() {
+		String larga = "ñ".repeat(40);
+
+		assertThatThrownBy(() -> service.cambiarPassword("admin", new CambioPasswordRequest("1234", larga)))
+				.isInstanceOf(ReglaNegocioException.class).hasMessageContaining("demasiado larga");
+	}
+
+	@Test
+	void unUsuarioBloqueadoOInactivoNoPuedeCambiarla() {
+		admin.setBloqueadoHasta(AHORA.plusSeconds(60));
+		assertThatThrownBy(() -> service.cambiarPassword("admin", new CambioPasswordRequest("1234", "contrasena-nueva")))
+				.isInstanceOf(CredencialesInvalidasException.class);
+
+		admin.setBloqueadoHasta(null);
+		admin.setActivo(false);
+		assertThatThrownBy(() -> service.cambiarPassword("admin", new CambioPasswordRequest("1234", "contrasena-nueva")))
+				.isInstanceOf(CredencialesInvalidasException.class);
+	}
+
+	private Jwt claims(LoginDTO sesion) {
+		return NimbusJwtDecoder.withSecretKey(clave).macAlgorithm(MacAlgorithm.HS256).build().decode(sesion.accessToken());
 	}
 
 }
