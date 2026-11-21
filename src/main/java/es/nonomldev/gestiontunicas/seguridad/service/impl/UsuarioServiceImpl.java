@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -73,13 +74,31 @@ public class UsuarioServiceImpl implements UsuarioService {
 		if (usuarioRepository.existsByUsernameAndIdNot(request.username(), id)) {
 			throw new ReglaNegocioException("Ya existe un usuario con el nombre " + request.username());
 		}
-		boolean seDesactiva = usuario.isActivo() && !request.activo();
+		comprobarQueQuedaUnAdministrador(usuario, request);
+		Set<RolEntity> roles = roles(request.roles());
+		// El token lleva el usuario y sus roles: si cambian, tiene que volver a iniciar sesión.
+		boolean cerrarSesiones = usuario.isActivo() && !request.activo()
+				|| !usuario.getUsername().equals(request.username())
+				|| !codigos(usuario.getRoles()).equals(request.roles());
 		usuarioMapper.actualizar(request, usuario);
-		usuario.setRoles(roles(request.roles()));
-		if (seDesactiva) {
+		usuario.setRoles(roles);
+		if (cerrarSesiones) {
 			refreshTokenRepository.revocarTodosDeUsuario(id);
 		}
 		return usuarioMapper.toDTO(usuario);
+	}
+
+	private void comprobarQueQuedaUnAdministrador(UsuarioEntity usuario, UsuarioRequest request) {
+		boolean esAdministradorActivo = usuario.isActivo() && codigos(usuario.getRoles()).contains(RolCodigoEnum.ADMIN);
+		boolean seguiraSiendolo = request.activo() && request.roles().contains(RolCodigoEnum.ADMIN);
+		if (esAdministradorActivo && !seguiraSiendolo
+				&& !usuarioRepository.existsByActivoTrueAndRoles_CodigoAndIdNot(RolCodigoEnum.ADMIN, usuario.getId())) {
+			throw new ReglaNegocioException("No se puede: es el único administrador activo");
+		}
+	}
+
+	private static Set<RolCodigoEnum> codigos(Set<RolEntity> roles) {
+		return roles.stream().map(RolEntity::getCodigo).collect(Collectors.toSet());
 	}
 
 	@Override
