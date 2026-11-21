@@ -31,22 +31,7 @@ CREATE DATABASE gestiontunicas OWNER gestiontunicas;
 $env:DB_PASSWORD = 'tu-contraseña'
 ```
 
-**3. Crear las tablas en el primer arranque.** Hibernate las genera con `create`.
-
-> ⚠️ `create` **borra todos los datos** de la base de datos. Úsalo solo con una base de datos nueva.
-
-```powershell
-$env:SPRING_JPA_HIBERNATE_DDL_AUTO = 'create'
-.\mvnw.cmd spring-boot:run
-```
-
-Cuando termine de arrancar, páralo con `Ctrl+C` y **quita la variable**:
-
-```powershell
-Remove-Item Env:SPRING_JPA_HIBERNATE_DDL_AUTO
-```
-
-**4. Arrancar con normalidad.** A partir de aquí los datos se conservan:
+**3. Arrancar.** Si la base de datos está vacía, se crean las tablas. Si ya tiene datos, se conservan:
 
 ```powershell
 .\mvnw.cmd spring-boot:run
@@ -54,15 +39,22 @@ Remove-Item Env:SPRING_JPA_HIBERNATE_DDL_AUTO
 
 La API queda en `http://localhost:8080`. En el perfil `dev` se crea el usuario de pruebas `admin` con contraseña `1234`.
 
+## Esquema de la base de datos
+
+- `src/main/resources/sql/esquema.sql` crea las tablas solo si la base de datos está vacía.
+- `src/main/resources/sql/postcreacion-esquema.sql` añade extensiones e índices en cada arranque, sin repetirlos.
+- **Si cambias una entidad, actualiza también `esquema.sql`.** El CI falla si no coinciden.
+- En una base de datos ya instalada, aplica el cambio con su `ALTER TABLE`, porque `esquema.sql` no modifica tablas existentes.
+
+> ⚠️ No uses `ddl-auto=create`: **borra todos los datos** y los índices de `postcreacion-esquema.sql` hasta el siguiente arranque.
+
 ## Tests
 
-Necesitan la base de datos local con las tablas ya creadas:
+Usan la base de datos local y no borran sus datos:
 
 ```powershell
 .\mvnw.cmd test
 ```
-
-> ⚠️ Comprueba antes que `SPRING_JPA_HIBERNATE_DDL_AUTO` no está definida: con `create`, los tests también borrarían los datos.
 
 ## Documentación de la API
 

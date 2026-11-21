@@ -1,4 +1,4 @@
--- Se ejecuta en cada arranque, después de que Hibernate cree las tablas.
+-- Se ejecuta en cada arranque, después de esquema.sql.
 -- Contiene solo lo que no se puede expresar con anotaciones JPA. Todo es idempotente (IF NOT EXISTS).
 
 -- Extensiones para buscar hermanos por nombre sin tildes y con coincidencia parcial
