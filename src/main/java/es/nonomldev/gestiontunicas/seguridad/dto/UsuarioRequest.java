@@ -21,6 +21,6 @@ public record UsuarioRequest(
 		@Size(max = 150) String apellidos,
 		@NotNull CargoUsuarioEnum cargo,
 		@Email @Size(max = 150) String email,
-		boolean activo,
+		@NotNull Boolean activo,
 		@NotEmpty Set<RolCodigoEnum> roles) {
 }

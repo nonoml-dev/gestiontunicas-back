@@ -21,4 +21,7 @@ public interface UsuarioRepository extends JpaRepository<UsuarioEntity, Long> {
 	/** Si hay algún usuario activo con ese rol (p. ej. para saber si ya existe un administrador). */
 	boolean existsByActivoTrueAndRoles_Codigo(RolCodigoEnum codigo);
 
+	/** Si hay otro usuario activo con ese rol (para no dejar la aplicación sin administrador). */
+	boolean existsByActivoTrueAndRoles_CodigoAndIdNot(RolCodigoEnum codigo, Long id);
+
 }
