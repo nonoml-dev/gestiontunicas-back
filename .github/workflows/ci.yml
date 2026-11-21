@@ -36,9 +36,9 @@ jobs:
           --health-retries 10
 
     env:
-      # Base de datos desechable del CI: Hibernate crea las tablas en cada ejecucion.
+      # Base de datos vacia: la crea sql/esquema.sql y Hibernate comprueba que coincide con las entidades.
       DB_PASSWORD: solo-para-ci
-      SPRING_JPA_HIBERNATE_DDL_AUTO: create
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
 
     steps:
       - name: Descargar el codigo
