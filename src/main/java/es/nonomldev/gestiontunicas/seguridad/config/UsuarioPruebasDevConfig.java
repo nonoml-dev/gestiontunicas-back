@@ -4,6 +4,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -18,8 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * SOLO PARA PRUEBAS (perfil dev): crea el usuario {@code admin} con contraseña {@code 1234} y rol ADMIN.
  * <p>
- * Con {@code ddl-auto=create} la base de datos se vacía en cada arranque, así que se crea cada vez.
- * No se ejecuta en producción.
+ * Se crea si no existe y se ejecuta antes que {@link AdministradorInicialRunner}. No se ejecuta en producción.
  */
 @Slf4j
 @Profile("dev")
@@ -30,6 +30,7 @@ public class UsuarioPruebasDevConfig {
 	private static final String PASSWORD = "1234";
 
 	@Bean
+	@Order(0)
 	ApplicationRunner crearUsuarioPruebas(UsuarioRepository usuarioRepository, RolRepository rolRepository,
 			PasswordEncoder passwordEncoder, TransactionTemplate transactionTemplate) {
 		return args -> transactionTemplate.executeWithoutResult(estado -> {

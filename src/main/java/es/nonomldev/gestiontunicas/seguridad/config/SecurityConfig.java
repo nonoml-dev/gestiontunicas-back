@@ -30,7 +30,7 @@ import com.nimbusds.jose.jwk.source.ImmutableSecret;
  */
 @Configuration
 @EnableMethodSecurity
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties({ JwtProperties.class, AdminInicialProperties.class })
 public class SecurityConfig {
 
 	/** Claim del token con los códigos de rol del usuario (ADMIN, PRIOSTE...). */
