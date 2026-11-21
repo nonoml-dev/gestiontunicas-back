@@ -43,6 +43,27 @@ $env:DB_PASSWORD = 'tu-contraseña'
 
 La API queda en `http://localhost:8080`. En el perfil `dev` se crea el usuario de pruebas `admin` con contraseña `1234`.
 
+## Producción
+
+Se activa con `SPRING_PROFILES_ACTIVE=prod`. **Si no se define, la aplicación arranca en `dev`**, con el usuario de pruebas `admin` / `1234`.
+
+Estas variables son obligatorias, y sin alguna de ellas la aplicación no arranca:
+
+| Variable | Uso |
+|---|---|
+| `DB_URL` | Conexión JDBC, por ejemplo `jdbc:postgresql://db:5432/gestiontunicas` |
+| `DB_USERNAME` | Usuario de PostgreSQL |
+| `DB_PASSWORD` | Contraseña de PostgreSQL |
+| `JWT_SECRET` | Clave propia de esta instalación, de al menos 32 caracteres. **No reutilices la de `dev`, que es pública** |
+
+Para generar la clave en PowerShell:
+
+```powershell
+[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
+```
+
+En este perfil, Swagger está desactivado, Actuator solo expone `/actuator/health` sin detalles y Hibernate valida el esquema sin modificarlo. No hay CORS porque Nginx sirve el front y la API en el mismo origen. El puerto del backend no debe publicarse fuera de la red interna.
+
 ## Esquema de la base de datos
 
 - `src/main/resources/sql/esquema.sql` crea las tablas solo si la base de datos está vacía.
