@@ -1,0 +1,2 @@
+org.springframework.boot.EnvironmentPostProcessor=\
+es.nonomldev.gestiontunicas.comun.config.VariablesProdEnvironmentPostProcessor

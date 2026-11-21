@@ -5,9 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.hibernate.annotations.Generated;
+import org.hibernate.annotations.GeneratedColumn;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.generator.EventType;
 import org.hibernate.type.SqlTypes;
 
 import es.nonomldev.gestiontunicas.comun.entity.BaseAuditableEntity;
@@ -61,10 +60,13 @@ public class TunicaEntity extends BaseAuditableEntity {
 	@Column(name = "dobladillo_cm", nullable = false)
 	private Integer dobladilloCm = 0;
 
-	/** Columna generada en BD: medida + dobladillo. Es la que se usa para proponer túnicas. */
-	@Generated(event = { EventType.INSERT, EventType.UPDATE })
-	@Column(name = "medida_total_cm", insertable = false, updatable = false,
-			columnDefinition = "smallint generated always as (medida_cm + dobladillo_cm) stored")
+	/**
+	 * Columna generada en BD: medida + dobladillo. Es la que se usa para proponer túnicas.
+	 * Debe ser STORED porque tiene índice: lo define sql/esquema.sql (Hibernate no añade esa palabra).
+	 */
+	@GeneratedColumn("medida_cm + dobladillo_cm")
+	@JdbcTypeCode(SqlTypes.SMALLINT)
+	@Column(name = "medida_total_cm", insertable = false, updatable = false)
 	private Integer medidaTotalCm;
 
 	@Enumerated(EnumType.STRING)

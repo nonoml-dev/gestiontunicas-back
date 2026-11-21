@@ -21,9 +21,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import es.nonomldev.gestiontunicas.comun.exception.CredencialesInvalidasException;
+import es.nonomldev.gestiontunicas.comun.exception.ReglaNegocioException;
 import es.nonomldev.gestiontunicas.configuracion.service.ConfiguracionService;
 import es.nonomldev.gestiontunicas.seguridad.config.JwtProperties;
 import es.nonomldev.gestiontunicas.seguridad.config.SecurityConfig;
+import es.nonomldev.gestiontunicas.seguridad.dto.CambioPasswordRequest;
 import es.nonomldev.gestiontunicas.seguridad.dto.LoginDTO;
 import es.nonomldev.gestiontunicas.seguridad.dto.LoginRequest;
 import es.nonomldev.gestiontunicas.seguridad.entity.RefreshTokenEntity;
@@ -52,6 +54,8 @@ public class AuthServiceImpl implements AuthService {
 
 	private static final String EMISOR = "gestiontunicas";
 	private static final int BYTES_REFRESH_TOKEN = 32;
+	/** Límite de BCrypt. */
+	private static final int BYTES_MAXIMOS_PASSWORD = 72;
 
 	private final UsuarioRepository usuarioRepository;
 	private final RefreshTokenRepository refreshTokenRepository;
@@ -124,6 +128,34 @@ public class AuthServiceImpl implements AuthService {
 		refreshTokenRepository.findByTokenHash(hash(refreshToken)).ifPresent(token -> token.setRevocado(true));
 	}
 
+	/** Sin rollback al rechazar: el contador de intentos fallidos debe guardarse. */
+	@Override
+	@Transactional(noRollbackFor = ReglaNegocioException.class)
+	public LoginDTO cambiarPassword(String username, CambioPasswordRequest request) {
+		Instant ahora = Instant.now(clock);
+		UsuarioEntity usuario = usuarioRepository.findByUsername(username)
+				.orElseThrow(() -> new CredencialesInvalidasException(MENSAJE_SESION_CADUCADA));
+		boolean bloqueado = usuario.getBloqueadoHasta() != null && usuario.getBloqueadoHasta().isAfter(ahora);
+		if (!usuario.isActivo() || bloqueado) {
+			throw new CredencialesInvalidasException(MENSAJE_SESION_CADUCADA);
+		}
+		if (!passwordEncoder.matches(request.passwordActual(), usuario.getPasswordHash())) {
+			anotarIntentoFallido(usuario, ahora);
+			throw new ReglaNegocioException("La contraseña actual no es correcta");
+		}
+		if (request.passwordNueva().getBytes(StandardCharsets.UTF_8).length > BYTES_MAXIMOS_PASSWORD) {
+			throw new ReglaNegocioException("La contraseña nueva es demasiado larga");
+		}
+		if (passwordEncoder.matches(request.passwordNueva(), usuario.getPasswordHash())) {
+			throw new ReglaNegocioException("La contraseña nueva tiene que ser distinta de la actual");
+		}
+		usuario.setPasswordHash(passwordEncoder.encode(request.passwordNueva()));
+		usuario.setDebeCambiarPassword(false);
+		usuario.setIntentosFallidos(0);
+		refreshTokenRepository.revocarTodosDeUsuario(usuario.getId());
+		return abrirSesion(usuario, ahora);
+	}
+
 	private void anotarIntentoFallido(UsuarioEntity usuario, Instant ahora) {
 		int intentos = usuario.getIntentosFallidos() + 1;
 		int maximo = configuracionService.entero(CLAVE_INTENTOS_MAXIMOS).orElse(INTENTOS_MAXIMOS_POR_DEFECTO);
@@ -159,15 +191,17 @@ public class AuthServiceImpl implements AuthService {
 
 	private String emitirToken(UsuarioEntity usuario, Instant ahora, Instant expiraEn) {
 		List<String> roles = usuario.getRoles().stream().map(rol -> rol.getCodigo().name()).sorted().toList();
-		JwtClaimsSet claims = JwtClaimsSet.builder()
+		JwtClaimsSet.Builder claims = JwtClaimsSet.builder()
 				.issuer(EMISOR)
 				.subject(usuario.getUsername())
 				.issuedAt(ahora)
 				.expiresAt(expiraEn)
-				.claim(SecurityConfig.CLAIM_ROLES, roles)
-				.build();
+				.claim(SecurityConfig.CLAIM_ROLES, roles);
+		if (usuario.isDebeCambiarPassword()) {
+			claims.claim(SecurityConfig.CLAIM_DEBE_CAMBIAR_PASSWORD, true);
+		}
 		JwsHeader cabecera = JwsHeader.with(MacAlgorithm.HS256).build();
-		return jwtEncoder.encode(JwtEncoderParameters.from(cabecera, claims)).getTokenValue();
+		return jwtEncoder.encode(JwtEncoderParameters.from(cabecera, claims.build())).getTokenValue();
 	}
 
 	private String nuevoRefreshToken() {

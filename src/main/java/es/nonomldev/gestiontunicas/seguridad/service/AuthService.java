@@ -1,5 +1,6 @@
 package es.nonomldev.gestiontunicas.seguridad.service;
 
+import es.nonomldev.gestiontunicas.seguridad.dto.CambioPasswordRequest;
 import es.nonomldev.gestiontunicas.seguridad.dto.LoginDTO;
 import es.nonomldev.gestiontunicas.seguridad.dto.LoginRequest;
 
@@ -23,5 +24,13 @@ public interface AuthService {
 
 	/** Revoca el refresh token. No falla si ya no era válido. */
 	void cerrarSesion(String refreshToken);
+
+	/**
+	 * Cambia la contraseña del usuario autenticado, cierra todas sus sesiones y abre una nueva.
+	 * Los fallos con la contraseña actual cuentan para el bloqueo por intentos.
+	 *
+	 * @throws es.nonomldev.gestiontunicas.comun.exception.ReglaNegocioException si no se puede cambiar
+	 */
+	LoginDTO cambiarPassword(String username, CambioPasswordRequest request);
 
 }

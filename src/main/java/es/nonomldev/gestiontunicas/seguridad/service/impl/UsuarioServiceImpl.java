@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -11,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.nonomldev.gestiontunicas.comun.exception.RecursoNoEncontradoException;
 import es.nonomldev.gestiontunicas.comun.exception.ReglaNegocioException;
-import es.nonomldev.gestiontunicas.seguridad.dto.CambioPasswordRequest;
 import es.nonomldev.gestiontunicas.seguridad.dto.UsuarioCreadoDTO;
 import es.nonomldev.gestiontunicas.seguridad.dto.UsuarioDTO;
 import es.nonomldev.gestiontunicas.seguridad.dto.UsuarioRequest;
@@ -22,7 +22,6 @@ import es.nonomldev.gestiontunicas.seguridad.mapper.UsuarioMapper;
 import es.nonomldev.gestiontunicas.seguridad.repository.RefreshTokenRepository;
 import es.nonomldev.gestiontunicas.seguridad.repository.RolRepository;
 import es.nonomldev.gestiontunicas.seguridad.repository.UsuarioRepository;
-import es.nonomldev.gestiontunicas.seguridad.service.UsuarioActualService;
 import es.nonomldev.gestiontunicas.seguridad.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
 
@@ -40,7 +39,6 @@ public class UsuarioServiceImpl implements UsuarioService {
 	private final RefreshTokenRepository refreshTokenRepository;
 	private final UsuarioMapper usuarioMapper;
 	private final PasswordEncoder passwordEncoder;
-	private final UsuarioActualService usuarioActualService;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -73,13 +71,31 @@ public class UsuarioServiceImpl implements UsuarioService {
 		if (usuarioRepository.existsByUsernameAndIdNot(request.username(), id)) {
 			throw new ReglaNegocioException("Ya existe un usuario con el nombre " + request.username());
 		}
-		boolean seDesactiva = usuario.isActivo() && !request.activo();
+		comprobarQueQuedaUnAdministrador(usuario, request);
+		Set<RolEntity> roles = roles(request.roles());
+		// El token lleva el usuario y sus roles: si cambian, tiene que volver a iniciar sesión.
+		boolean cerrarSesiones = usuario.isActivo() && !request.activo()
+				|| !usuario.getUsername().equals(request.username())
+				|| !codigos(usuario.getRoles()).equals(request.roles());
 		usuarioMapper.actualizar(request, usuario);
-		usuario.setRoles(roles(request.roles()));
-		if (seDesactiva) {
+		usuario.setRoles(roles);
+		if (cerrarSesiones) {
 			refreshTokenRepository.revocarTodosDeUsuario(id);
 		}
 		return usuarioMapper.toDTO(usuario);
+	}
+
+	private void comprobarQueQuedaUnAdministrador(UsuarioEntity usuario, UsuarioRequest request) {
+		boolean esAdministradorActivo = usuario.isActivo() && codigos(usuario.getRoles()).contains(RolCodigoEnum.ADMIN);
+		boolean seguiraSiendolo = request.activo() && request.roles().contains(RolCodigoEnum.ADMIN);
+		if (esAdministradorActivo && !seguiraSiendolo
+				&& !usuarioRepository.existsByActivoTrueAndRoles_CodigoAndIdNot(RolCodigoEnum.ADMIN, usuario.getId())) {
+			throw new ReglaNegocioException("No se puede: es el único administrador activo");
+		}
+	}
+
+	private static Set<RolCodigoEnum> codigos(Set<RolEntity> roles) {
+		return roles.stream().map(RolEntity::getCodigo).collect(Collectors.toSet());
 	}
 
 	@Override
@@ -92,19 +108,6 @@ public class UsuarioServiceImpl implements UsuarioService {
 		usuario.setBloqueadoHasta(null);
 		refreshTokenRepository.revocarTodosDeUsuario(id);
 		return new UsuarioCreadoDTO(usuarioMapper.toDTO(usuario), temporal);
-	}
-
-	@Override
-	public void cambiarPasswordPropia(CambioPasswordRequest request) {
-		UsuarioEntity usuario = usuarioActualService.obtener();
-		if (!passwordEncoder.matches(request.passwordActual(), usuario.getPasswordHash())) {
-			throw new ReglaNegocioException("La contraseña actual no es correcta");
-		}
-		if (request.passwordActual().equals(request.passwordNueva())) {
-			throw new ReglaNegocioException("La contraseña nueva tiene que ser distinta de la actual");
-		}
-		usuario.setPasswordHash(passwordEncoder.encode(request.passwordNueva()));
-		usuario.setDebeCambiarPassword(false);
 	}
 
 	private UsuarioEntity buscar(Long id) {
