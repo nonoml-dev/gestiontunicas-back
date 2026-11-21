@@ -15,6 +15,10 @@ API REST para gestionar el reparto anual de túnicas de la Hermandad de la Quint
 | `DB_PASSWORD` | Sí | Contraseña del usuario `gestiontunicas` de PostgreSQL |
 | `JWT_SECRET` | Solo fuera de `dev` | Clave de firma de los tokens, de al menos 32 caracteres |
 | `SPRING_PROFILES_ACTIVE` | No | Perfil activo. Por defecto, `dev` |
+| `ADMIN_USERNAME` | Solo en la primera instalación fuera de `dev` | Usuario del primer administrador |
+| `ADMIN_PASSWORD` | Solo en la primera instalación fuera de `dev` | Contraseña inicial, de al menos 8 caracteres. Hay que cambiarla al entrar |
+
+El primer administrador solo se crea si no hay ninguno activo. Después, esas dos variables se pueden quitar: cambiarlas no modifica ningún usuario.
 
 ## Arranque desde cero (Windows, PowerShell)
 
@@ -43,6 +47,7 @@ La API queda en `http://localhost:8080`. En el perfil `dev` se crea el usuario d
 
 - `src/main/resources/sql/esquema.sql` crea las tablas solo si la base de datos está vacía.
 - `src/main/resources/sql/postcreacion-esquema.sql` añade extensiones e índices en cada arranque, sin repetirlos.
+- `src/main/resources/sql/datos-iniciales.sql` añade los 5 roles y la configuración que falten, sin sobrescribir valores guardados.
 - **Si cambias una entidad, actualiza también `esquema.sql`.** El CI falla si no coinciden.
 - En una base de datos ya instalada, aplica el cambio con su `ALTER TABLE`, porque `esquema.sql` no modifica tablas existentes.
 
