@@ -13,9 +13,13 @@ public interface ReparacionService {
 
 	List<ReparacionDTO> deTunica(Long tunicaId);
 
+	/** No se admite en túnicas dadas de baja o que son propiedad de un hermano. */
 	ReparacionDTO registrar(Long tunicaId, ReparacionRequest request);
 
-	/** Al finalizar la última reparación pendiente, la túnica vuelve a estar disponible. */
-	ReparacionDTO actualizar(Long id, ReparacionRequest request);
+	/**
+	 * Cambia el estado, las fechas, la descripción o el coste (la pieza no). Al terminar la última reparación,
+	 * la túnica vuelve al estado que corresponde a sus piezas: disponible si están todas bien.
+	 */
+	ReparacionDTO actualizar(Long tunicaId, Long id, ReparacionRequest request);
 
 }

@@ -26,7 +26,6 @@ import es.nonomldev.gestiontunicas.sancion.service.CalculadoraSanciones;
 import es.nonomldev.gestiontunicas.sancion.service.GeneradorSanciones;
 import es.nonomldev.gestiontunicas.seguridad.entity.UsuarioEntity;
 import es.nonomldev.gestiontunicas.tunica.entity.EstadoPiezaEnum;
-import es.nonomldev.gestiontunicas.tunica.entity.EstadoTunicaEnum;
 import es.nonomldev.gestiontunicas.tunica.entity.PiezaEntity;
 import es.nonomldev.gestiontunicas.tunica.entity.TipoPiezaEnum;
 import es.nonomldev.gestiontunicas.tunica.entity.TunicaEntity;
@@ -91,7 +90,7 @@ public class ProcesadorDevolucion {
 		}
 		devolucionRepository.save(devolucion);
 
-		tunica.setEstado(estadoTunica(tunica));
+		tunica.setEstado(tunica.estadoSegunPiezas());
 		alquiler.setEstado(EstadoAlquilerEnum.DEVUELTO);
 		calculo.conceptos().forEach(concepto -> generador.sancionar(alquiler, devolucion, concepto));
 		if (fueraPlazo) {
@@ -108,17 +107,6 @@ public class ProcesadorDevolucion {
 			return EstadoPiezaEnum.DETERIORADA;
 		}
 		return EstadoPiezaEnum.BUEN_ESTADO;
-	}
-
-	/** Pieza perdida → incompleta; pieza deteriorada → en reparación; todo bien → disponible. */
-	private static EstadoTunicaEnum estadoTunica(TunicaEntity tunica) {
-		if (tunica.getPiezas().stream().anyMatch(p -> p.getEstado() == EstadoPiezaEnum.PERDIDA)) {
-			return EstadoTunicaEnum.INCOMPLETA;
-		}
-		if (tunica.getPiezas().stream().anyMatch(p -> p.getEstado() != EstadoPiezaEnum.BUEN_ESTADO)) {
-			return EstadoTunicaEnum.EN_REPARACION;
-		}
-		return EstadoTunicaEnum.DISPONIBLE;
 	}
 
 }
