@@ -129,6 +129,20 @@ public class TunicaEntity extends BaseAuditableEntity {
 		return estado != EstadoTunicaEnum.PROPIEDAD_HERMANO;
 	}
 
+	/**
+	 * Estado que corresponde a sus piezas (análisis §4.4 y §4.8): alguna perdida → incompleta;
+	 * alguna deteriorada o en reparación → en reparación; todas en buen estado → disponible.
+	 */
+	public EstadoTunicaEnum estadoSegunPiezas() {
+		if (piezas.stream().anyMatch(p -> p.getEstado() == EstadoPiezaEnum.PERDIDA)) {
+			return EstadoTunicaEnum.INCOMPLETA;
+		}
+		if (piezas.stream().anyMatch(p -> p.getEstado() != EstadoPiezaEnum.BUEN_ESTADO)) {
+			return EstadoTunicaEnum.EN_REPARACION;
+		}
+		return EstadoTunicaEnum.DISPONIBLE;
+	}
+
 	public boolean encajaCon(int alturaCm, int toleranciaCm) {
 		return Math.abs(calcularMedidaTotalCm() - alturaCm) <= toleranciaCm;
 	}

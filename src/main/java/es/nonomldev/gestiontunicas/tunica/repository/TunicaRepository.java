@@ -31,14 +31,14 @@ public interface TunicaRepository extends JpaRepository<TunicaEntity, Long> {
 	Optional<TunicaEntity> findWithPiezasById(Long id);
 
 	/**
-	 * Túnicas propuestas al entregar: disponibles, dentro de la tolerancia y ordenadas por cercanía
-	 * a la altura del hermano.
+	 * Túnicas propuestas al entregar: disponibles, dentro de la tolerancia (incluida) y ordenadas por cercanía
+	 * a la altura del hermano. A igual distancia, por código como número (9 antes que 10) y las de monaguillo detrás.
 	 */
 	@Query("""
 			select t from TunicaEntity t
 			where t.estado = es.nonomldev.gestiontunicas.tunica.entity.EstadoTunicaEnum.DISPONIBLE
 			  and t.medidaTotalCm between :alturaCm - :toleranciaCm and :alturaCm + :toleranciaCm
-			order by abs(t.medidaTotalCm - :alturaCm), t.codigo
+			order by abs(t.medidaTotalCm - :alturaCm), length(t.codigo), t.codigo
 			""")
 	List<TunicaEntity> proponerPorAltura(int alturaCm, int toleranciaCm);
 

@@ -86,6 +86,7 @@ public class ImportacionHermanosServiceImpl implements ImportacionHermanosServic
 	@Override
 	@Transactional(readOnly = true)
 	public List<ImportacionFilaDTO> filas(Long importacionId, EstadoFilaEnum estado) {
+		buscar(importacionId);
 		List<ImportacionFilaEntity> filas = estado == null
 				? filaRepository.findByImportacionIdOrderByNumFila(importacionId)
 				: filaRepository.findByImportacionIdAndEstadoOrderByNumFila(importacionId, estado);
@@ -95,6 +96,7 @@ public class ImportacionHermanosServiceImpl implements ImportacionHermanosServic
 	@Override
 	public ImportacionFilaDTO decidir(Long filaId, DecisionFilaRequest request) {
 		ImportacionFilaEntity fila = filaRepository.findById(filaId)
+				.filter(f -> f.getImportacion().getTipo() == TipoImportacionEnum.HERMANOS)
 				.orElseThrow(() -> new RecursoNoEncontradoException("la fila de importación", filaId));
 		exigirPrevisualizada(fila.getImportacion());
 		if (fila.getEstado() == EstadoFilaEnum.ERROR) {
@@ -242,7 +244,9 @@ public class ImportacionHermanosServiceImpl implements ImportacionHermanosServic
 	}
 
 	private ImportacionEntity buscar(Long id) {
+		// Las importaciones de túnicas tienen su propio asistente (y sus propios permisos).
 		return importacionRepository.findById(id)
+				.filter(i -> i.getTipo() == TipoImportacionEnum.HERMANOS)
 				.orElseThrow(() -> new RecursoNoEncontradoException("la importación", id));
 	}
 

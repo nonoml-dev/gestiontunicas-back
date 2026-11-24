@@ -16,4 +16,7 @@ public interface ReparacionRepository extends JpaRepository<ReparacionEntity, Lo
 	/** ¿Quedan reparaciones abiertas? La túnica no vuelve a estar disponible hasta terminarlas. */
 	boolean existsByPiezaTunicaIdAndEstadoIn(Long tunicaId, Collection<EstadoReparacionEnum> estados);
 
+	/** ¿La pieza tiene otra reparación abierta? Hasta terminarlas todas no vuelve a estar en buen estado. */
+	boolean existsByPiezaIdAndEstadoIn(Long piezaId, Collection<EstadoReparacionEnum> estados);
+
 }

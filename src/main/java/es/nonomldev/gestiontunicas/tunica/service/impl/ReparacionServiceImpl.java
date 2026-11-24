@@ -35,6 +35,10 @@ public class ReparacionServiceImpl implements ReparacionService {
 	private static final Set<EstadoTunicaEnum> EN_CASA = EnumSet.of(EstadoTunicaEnum.DISPONIBLE, EstadoTunicaEnum.EN_REVISION,
 			EstadoTunicaEnum.EN_REPARACION, EstadoTunicaEnum.INCOMPLETA);
 
+	/** Ya no son de la Hermandad o no se van a usar: no se reparan. */
+	private static final Set<EstadoTunicaEnum> SIN_REPARACIONES = EnumSet.of(EstadoTunicaEnum.BAJA,
+			EstadoTunicaEnum.PROPIEDAD_HERMANO);
+
 	private final ReparacionRepository reparacionRepository;
 	private final PiezaRepository piezaRepository;
 	private final TunicaRepository tunicaRepository;
@@ -43,6 +47,9 @@ public class ReparacionServiceImpl implements ReparacionService {
 	@Override
 	@Transactional(readOnly = true)
 	public List<ReparacionDTO> deTunica(Long tunicaId) {
+		if (!tunicaRepository.existsById(tunicaId)) {
+			throw new RecursoNoEncontradoException("la túnica", tunicaId);
+		}
 		return mapper.toReparacionDTOs(reparacionRepository.findByPiezaTunicaIdOrderByFechaInicioDesc(tunicaId));
 	}
 
@@ -50,8 +57,12 @@ public class ReparacionServiceImpl implements ReparacionService {
 	public ReparacionDTO registrar(Long tunicaId, ReparacionRequest request) {
 		TunicaEntity tunica = tunicaRepository.findById(tunicaId)
 				.orElseThrow(() -> new RecursoNoEncontradoException("la túnica", tunicaId));
+		if (SIN_REPARACIONES.contains(tunica.getEstado())) {
+			throw new ReglaNegocioException("La túnica %s %s: no se le registran reparaciones".formatted(tunica.getCodigo(),
+					tunica.getEstado() == EstadoTunicaEnum.BAJA ? "está dada de baja" : "es propiedad de un hermano"));
+		}
 		PiezaEntity pieza = piezaRepository.findByTunicaIdAndTipo(tunicaId, request.tipoPieza())
-				.orElseThrow(() -> new RecursoNoEncontradoException(
+				.orElseThrow(() -> new ReglaNegocioException(
 						"La túnica %s no tiene la pieza %s".formatted(tunica.getCodigo(), request.tipoPieza())));
 		validarFechas(request);
 
@@ -63,8 +74,9 @@ public class ReparacionServiceImpl implements ReparacionService {
 	}
 
 	@Override
-	public ReparacionDTO actualizar(Long id, ReparacionRequest request) {
+	public ReparacionDTO actualizar(Long tunicaId, Long id, ReparacionRequest request) {
 		ReparacionEntity reparacion = reparacionRepository.findById(id)
+				.filter(r -> r.getPieza().getTunica().getId().equals(tunicaId))
 				.orElseThrow(() -> new RecursoNoEncontradoException("la reparación", id));
 		if (reparacion.getPieza().getTipo() != request.tipoPieza()) {
 			throw new ReglaNegocioException("No se puede cambiar la pieza de una reparación ya registrada");
@@ -76,26 +88,21 @@ public class ReparacionServiceImpl implements ReparacionService {
 	}
 
 	/**
-	 * Reparación abierta: la pieza pasa a "en reparación" y la túnica también.
-	 * Reparación finalizada: la pieza queda en buen estado y, si no quedan otras reparaciones abiertas
-	 * ni piezas dañadas o perdidas, la túnica vuelve a estar disponible.
+	 * Reparación abierta: la pieza pasa a "en reparación". Terminada: la pieza vuelve a estar en buen estado
+	 * si no tiene otra reparación abierta. Después, si la túnica está en casa, toma el estado que corresponde
+	 * a sus piezas (una perdida la deja incompleta; todas bien, disponible).
 	 */
 	private void aplicarEstado(ReparacionEntity reparacion, TunicaEntity tunica) {
 		PiezaEntity pieza = reparacion.getPieza();
 		if (ABIERTAS.contains(reparacion.getEstado())) {
 			pieza.setEstado(EstadoPiezaEnum.EN_REPARACION);
-			if (EN_CASA.contains(tunica.getEstado())) {
-				tunica.setEstado(EstadoTunicaEnum.EN_REPARACION);
-			}
-			return;
+		} else {
+			reparacionRepository.flush();
+			boolean otraAbierta = reparacionRepository.existsByPiezaIdAndEstadoIn(pieza.getId(), ABIERTAS);
+			pieza.setEstado(otraAbierta ? EstadoPiezaEnum.EN_REPARACION : EstadoPiezaEnum.BUEN_ESTADO);
 		}
-		pieza.setEstado(EstadoPiezaEnum.BUEN_ESTADO);
-		reparacionRepository.flush();
-		boolean quedanAbiertas = reparacionRepository.existsByPiezaTunicaIdAndEstadoIn(tunica.getId(), ABIERTAS);
-		boolean quedanDanadas = piezaRepository.findByTunicaIdOrderByTipo(tunica.getId()).stream()
-				.anyMatch(p -> p.getEstado() != EstadoPiezaEnum.BUEN_ESTADO);
-		if (!quedanAbiertas && !quedanDanadas && EN_CASA.contains(tunica.getEstado())) {
-			tunica.setEstado(EstadoTunicaEnum.DISPONIBLE);
+		if (EN_CASA.contains(tunica.getEstado())) {
+			tunica.setEstado(tunica.estadoSegunPiezas());
 		}
 	}
 
