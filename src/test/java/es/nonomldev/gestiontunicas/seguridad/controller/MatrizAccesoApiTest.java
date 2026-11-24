@@ -40,6 +40,7 @@ import es.nonomldev.gestiontunicas.comun.config.WebConfig;
 import es.nonomldev.gestiontunicas.comun.exception.ManejadorErrores;
 import es.nonomldev.gestiontunicas.hermano.service.HermanoService;
 import es.nonomldev.gestiontunicas.importacion.service.ImportacionHermanosService;
+import es.nonomldev.gestiontunicas.importacion.service.ImportacionTunicasService;
 import es.nonomldev.gestiontunicas.seguridad.config.SecurityConfig;
 import es.nonomldev.gestiontunicas.seguridad.service.AuthService;
 import es.nonomldev.gestiontunicas.seguridad.service.RolService;
@@ -77,6 +78,7 @@ class MatrizAccesoApiTest {
 	private static final String LOGIN = "{\"username\":\"usuario.prueba\",\"password\":\"clave-de-prueba\"}";
 	private static final String REFRESH = "{\"refreshToken\":\"refresh-de-prueba\"}";
 	private static final String SUBIDA_EXCEL = "POST /api/v1/hermanos/importaciones";
+	private static final String SUBIDA_INVENTARIO = "POST /api/v1/tunicas/importaciones";
 	private static final String CAMBIAR_PASSWORD = "POST /api/v1/auth/cambiar-password";
 
 	private static final List<Endpoint> PROTEGIDOS = List.of(
@@ -110,7 +112,15 @@ class MatrizAccesoApiTest {
 			new Endpoint("GET /api/v1/tunicas/{id}", 200, null, ROLES),
 			new Endpoint("POST /api/v1/tunicas", 201, TUNICA, GESTION_TUNICAS),
 			new Endpoint("PUT /api/v1/tunicas/{id}", 200, TUNICA, GESTION_TUNICAS),
-			new Endpoint("POST /api/v1/tunicas/{id}/baja", 200, MOTIVO, GESTION_TUNICAS));
+			new Endpoint("POST /api/v1/tunicas/{id}/baja", 200, MOTIVO, GESTION_TUNICAS),
+
+			new Endpoint(SUBIDA_INVENTARIO, 201, null, GESTION_TUNICAS),
+			new Endpoint("GET /api/v1/tunicas/importaciones/{id}", 200, null, GESTION_TUNICAS),
+			new Endpoint("GET /api/v1/tunicas/importaciones/{id}/filas", 200, null, GESTION_TUNICAS),
+			new Endpoint("PUT /api/v1/tunicas/importaciones/filas/{filaId}/decision", 200, DECISION, GESTION_TUNICAS),
+			new Endpoint("POST /api/v1/tunicas/importaciones/{id}/confirmar", 200, null, GESTION_TUNICAS),
+			new Endpoint("POST /api/v1/tunicas/importaciones/{id}/cancelar", 200, null, GESTION_TUNICAS),
+			new Endpoint("GET /api/v1/tunicas/importaciones/plantilla", 200, null, GESTION_TUNICAS));
 
 	/** Parámetros obligatorios de algunos GET, para que la petición sea válida. */
 	private static final Map<String, String> PARAMETROS = Map.of(
@@ -146,6 +156,9 @@ class MatrizAccesoApiTest {
 
 	@MockitoBean
 	private TunicaService tunicaService;
+
+	@MockitoBean
+	private ImportacionTunicasService importacionTunicasService;
 
 	@Test
 	void todosLosEndpointsEstanEnLaMatriz() {
@@ -219,7 +232,8 @@ class MatrizAccesoApiTest {
 	}
 
 	private void sinLlegarAlServicio() {
-		verifyNoInteractions(authService, usuarioService, rolService, hermanoService, importacionService, tunicaService);
+		verifyNoInteractions(authService, usuarioService, rolService, hermanoService, importacionService, tunicaService,
+				importacionTunicasService);
 	}
 
 	private static Stream<Arguments> endpointYRol() {
@@ -237,8 +251,8 @@ class MatrizAccesoApiTest {
 	private static AbstractMockHttpServletRequestBuilder<?> peticion(Endpoint endpoint) {
 		String url = endpoint.ruta().replace("{id}", "1").replace("{filaId}", "1")
 				+ PARAMETROS.getOrDefault(endpoint.clave(), "");
-		if (SUBIDA_EXCEL.equals(endpoint.clave())) {
-			return multipart(url).file(new MockMultipartFile("fichero", "hermanos.xlsx",
+		if (SUBIDA_EXCEL.equals(endpoint.clave()) || SUBIDA_INVENTARIO.equals(endpoint.clave())) {
+			return multipart(url).file(new MockMultipartFile("fichero", "fichero.xlsx",
 					MediaType.APPLICATION_OCTET_STREAM_VALUE, new byte[] { 1 }));
 		}
 		var peticion = request(HttpMethod.valueOf(endpoint.metodo()), url);
