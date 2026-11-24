@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -43,6 +44,7 @@ import es.nonomldev.gestiontunicas.seguridad.config.SecurityConfig;
 import es.nonomldev.gestiontunicas.seguridad.service.AuthService;
 import es.nonomldev.gestiontunicas.seguridad.service.RolService;
 import es.nonomldev.gestiontunicas.seguridad.service.UsuarioService;
+import es.nonomldev.gestiontunicas.tunica.service.TunicaService;
 
 /**
  * Acceso permitido y denegado de cada endpoint para cada rol, según la matriz del análisis §3.
@@ -60,6 +62,7 @@ class MatrizAccesoApiTest {
 	private static final Set<String> ROLES = Set.of("ADMIN", "PRIOSTE", "MAYORDOMO", "SECRETARIO", "CAPILLER");
 	private static final Set<String> SOLO_ADMIN = Set.of("ADMIN");
 	private static final Set<String> GESTION_HERMANOS = Set.of("ADMIN", "PRIOSTE", "MAYORDOMO", "SECRETARIO");
+	private static final Set<String> GESTION_TUNICAS = Set.of("ADMIN", "PRIOSTE");
 
 	private static final String USUARIO = """
 			{"username":"usuario.prueba","nombre":"Nombre","apellidos":"Apellidos","cargo":"CAPILLER",
@@ -68,6 +71,8 @@ class MatrizAccesoApiTest {
 	private static final String HERMANO = "{\"nombre\":\"Nombre\",\"apellidos\":\"Apellidos\"}";
 	private static final String CONTACTO = "{\"telefono1\":\"600000000\"}";
 	private static final String DECISION = "{\"decision\":\"IGNORAR\"}";
+	private static final String TUNICA = "{\"codigo\":\"42\",\"medidaCm\":158,\"dobladilloCm\":6}";
+	private static final String MOTIVO = "{\"motivo\":\"Rota sin arreglo\"}";
 	private static final String CAMBIO_PASSWORD = "{\"passwordActual\":\"temporal-1234\",\"passwordNueva\":\"contrasena-nueva\"}";
 	private static final String LOGIN = "{\"username\":\"usuario.prueba\",\"password\":\"clave-de-prueba\"}";
 	private static final String REFRESH = "{\"refreshToken\":\"refresh-de-prueba\"}";
@@ -97,7 +102,20 @@ class MatrizAccesoApiTest {
 			new Endpoint("PUT /api/v1/hermanos/importaciones/filas/{filaId}/decision", 200, DECISION, GESTION_HERMANOS),
 			new Endpoint("POST /api/v1/hermanos/importaciones/{id}/confirmar", 200, null, GESTION_HERMANOS),
 			new Endpoint("POST /api/v1/hermanos/importaciones/{id}/cancelar", 200, null, GESTION_HERMANOS),
-			new Endpoint("GET /api/v1/hermanos/importaciones/plantilla", 200, null, GESTION_HERMANOS));
+			new Endpoint("GET /api/v1/hermanos/importaciones/plantilla", 200, null, GESTION_HERMANOS),
+
+			new Endpoint("GET /api/v1/tunicas", 200, null, ROLES),
+			new Endpoint("GET /api/v1/tunicas/propuesta", 200, null, ROLES),
+			new Endpoint("GET /api/v1/tunicas/aviso-codigo", 200, null, GESTION_TUNICAS),
+			new Endpoint("GET /api/v1/tunicas/{id}", 200, null, ROLES),
+			new Endpoint("POST /api/v1/tunicas", 201, TUNICA, GESTION_TUNICAS),
+			new Endpoint("PUT /api/v1/tunicas/{id}", 200, TUNICA, GESTION_TUNICAS),
+			new Endpoint("POST /api/v1/tunicas/{id}/baja", 200, MOTIVO, GESTION_TUNICAS));
+
+	/** Parámetros obligatorios de algunos GET, para que la petición sea válida. */
+	private static final Map<String, String> PARAMETROS = Map.of(
+			"GET /api/v1/tunicas/propuesta", "?alturaCm=160",
+			"GET /api/v1/tunicas/aviso-codigo", "?codigo=42");
 
 	private static final List<Endpoint> PUBLICOS = List.of(
 			new Endpoint("POST /api/v1/auth/login", 200, LOGIN, Set.of()),
@@ -125,6 +143,9 @@ class MatrizAccesoApiTest {
 
 	@MockitoBean
 	private ImportacionHermanosService importacionService;
+
+	@MockitoBean
+	private TunicaService tunicaService;
 
 	@Test
 	void todosLosEndpointsEstanEnLaMatriz() {
@@ -198,7 +219,7 @@ class MatrizAccesoApiTest {
 	}
 
 	private void sinLlegarAlServicio() {
-		verifyNoInteractions(authService, usuarioService, rolService, hermanoService, importacionService);
+		verifyNoInteractions(authService, usuarioService, rolService, hermanoService, importacionService, tunicaService);
 	}
 
 	private static Stream<Arguments> endpointYRol() {
@@ -214,7 +235,8 @@ class MatrizAccesoApiTest {
 	}
 
 	private static AbstractMockHttpServletRequestBuilder<?> peticion(Endpoint endpoint) {
-		String url = endpoint.ruta().replace("{id}", "1").replace("{filaId}", "1");
+		String url = endpoint.ruta().replace("{id}", "1").replace("{filaId}", "1")
+				+ PARAMETROS.getOrDefault(endpoint.clave(), "");
 		if (SUBIDA_EXCEL.equals(endpoint.clave())) {
 			return multipart(url).file(new MockMultipartFile("fichero", "hermanos.xlsx",
 					MediaType.APPLICATION_OCTET_STREAM_VALUE, new byte[] { 1 }));
