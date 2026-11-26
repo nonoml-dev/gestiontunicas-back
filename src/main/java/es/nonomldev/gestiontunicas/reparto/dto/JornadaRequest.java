@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -21,4 +22,10 @@ public record JornadaRequest(
 		boolean permiteRenovacion,
 		boolean permiteNuevaAlta,
 		boolean permiteCambio) {
+
+	@AssertTrue(message = "la hora de fin no puede ser anterior a la de inicio")
+	public boolean isHorarioCoherente() {
+		return horaInicio == null || horaFin == null || !horaFin.isBefore(horaInicio);
+	}
+
 }

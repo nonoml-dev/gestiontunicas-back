@@ -2,6 +2,7 @@ package es.nonomldev.gestiontunicas.reparto.service.impl;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +49,7 @@ import lombok.RequiredArgsConstructor;
 public class RepartoServiceImpl implements RepartoService {
 
 	private static final int JORNADAS_ORDINARIAS = 3;
+	private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
 	private final RepartoRepository repartoRepository;
 	private final JornadaRepository jornadaRepository;
@@ -190,7 +192,10 @@ public class RepartoServiceImpl implements RepartoService {
 			throw new ReglaNegocioException("El reparto de %d está cerrado".formatted(reparto.getAnio()));
 		}
 		if (reparto.jornadaDe(request.fecha()).isPresent()) {
-			throw new ReglaNegocioException("Ya hay una jornada el " + request.fecha());
+			throw new ReglaNegocioException("Ya hay una jornada el " + request.fecha().format(FORMATO_FECHA));
+		}
+		if (!request.permiteRenovacion() && !request.permiteNuevaAlta() && !request.permiteCambio()) {
+			throw new ReglaNegocioException("Marca al menos una operación para la jornada extraordinaria");
 		}
 		JornadaEntity jornada = mapper.toEntity(request);
 		jornada.setNumero(jornadaRepository.maxNumero(id) + 1);
