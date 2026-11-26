@@ -36,7 +36,7 @@ import jakarta.persistence.EntityManager;
  * datos (en local, el inventario de pruebas), al empezar se pasan todas las túnicas existentes a "propiedad del
  * hermano": así dejan libres sus códigos y no salen en las propuestas. También se deshace.
  */
-@SpringBootTest
+@SpringBootTest(properties = "app.reservas.liberacion-automatica=false")
 @Transactional
 class InventarioTunicasBdTest {
 
