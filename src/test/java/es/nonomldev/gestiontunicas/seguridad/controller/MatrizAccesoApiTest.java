@@ -40,6 +40,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 
 import es.nonomldev.gestiontunicas.comun.config.WebConfig;
 import es.nonomldev.gestiontunicas.comun.exception.ManejadorErrores;
+import es.nonomldev.gestiontunicas.configuracion.service.ConfiguracionService;
 import es.nonomldev.gestiontunicas.hermano.service.HermanoService;
 import es.nonomldev.gestiontunicas.importacion.service.ImportacionHermanosService;
 import es.nonomldev.gestiontunicas.importacion.service.ImportacionTunicasService;
@@ -70,6 +71,7 @@ class MatrizAccesoApiTest {
 	private static final Set<String> SOLO_ADMIN = Set.of("ADMIN");
 	private static final Set<String> GESTION_HERMANOS = Set.of("ADMIN", "PRIOSTE", "MAYORDOMO", "SECRETARIO");
 	private static final Set<String> GESTION_TUNICAS = Set.of("ADMIN", "PRIOSTE");
+	private static final Set<String> CONSULTA_CONFIGURACION = Set.of("ADMIN", "PRIOSTE", "MAYORDOMO", "SECRETARIO");
 	private static final Set<String> GESTION_REPARTO = Set.of("ADMIN", "PRIOSTE");
 	private static final Set<String> CONSULTA_REPARTO = Set.of("ADMIN", "PRIOSTE", "MAYORDOMO", "SECRETARIO");
 
@@ -116,6 +118,9 @@ class MatrizAccesoApiTest {
 			new Endpoint("PUT /api/v1/usuarios/{id}", 200, USUARIO, SOLO_ADMIN),
 			new Endpoint("POST /api/v1/usuarios/{id}/restablecer-password", 200, null, SOLO_ADMIN),
 			new Endpoint("GET /api/v1/roles", 200, null, SOLO_ADMIN),
+
+			new Endpoint("GET /api/v1/configuracion", 200, null, CONSULTA_CONFIGURACION),
+			new Endpoint("PUT /api/v1/configuracion/{clave}", 200, "{\"valor\":\"3\"}", SOLO_ADMIN),
 
 			new Endpoint("GET /api/v1/hermanos", 200, null, ROLES),
 			new Endpoint("GET /api/v1/hermanos/criterio-edad", 200, null, ROLES),
@@ -216,6 +221,9 @@ class MatrizAccesoApiTest {
 	private RepartoService repartoService;
 
 	@MockitoBean
+	private ConfiguracionService configuracionService;
+
+	@MockitoBean
 	private PlantillaResguardoService plantillaResguardoService;
 
 	/** La descarga de la plantilla necesita el nombre del fichero. */
@@ -299,7 +307,7 @@ class MatrizAccesoApiTest {
 	private void sinLlegarAlServicio() {
 		verifyNoInteractions(authService, usuarioService, rolService, hermanoService, importacionService, tunicaService,
 				importacionTunicasService, reparacionService, repartoService,
-				plantillaResguardoService);
+				plantillaResguardoService, configuracionService);
 	}
 
 	private static Stream<Arguments> endpointYRol() {
@@ -316,6 +324,7 @@ class MatrizAccesoApiTest {
 
 	private static AbstractMockHttpServletRequestBuilder<?> peticion(Endpoint endpoint) {
 		String url = endpoint.ruta().replace("{id}", "1").replace("{filaId}", "1").replace("{tunicaId}", "1")
+				.replace("{clave}", "reparto.tolerancia_medida_cm")
 				+ PARAMETROS.getOrDefault(endpoint.clave(), "");
 		if (SUBIDA_EXCEL.equals(endpoint.clave()) || SUBIDA_INVENTARIO.equals(endpoint.clave())) {
 			return multipart(url).file(new MockMultipartFile("fichero", "fichero.xlsx",
