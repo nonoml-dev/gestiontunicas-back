@@ -2,6 +2,7 @@ package es.nonomldev.gestiontunicas.seguridad.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
@@ -15,6 +16,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -38,9 +40,13 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 
 import es.nonomldev.gestiontunicas.comun.config.WebConfig;
 import es.nonomldev.gestiontunicas.comun.exception.ManejadorErrores;
+import es.nonomldev.gestiontunicas.configuracion.service.ConfiguracionService;
 import es.nonomldev.gestiontunicas.hermano.service.HermanoService;
 import es.nonomldev.gestiontunicas.importacion.service.ImportacionHermanosService;
 import es.nonomldev.gestiontunicas.importacion.service.ImportacionTunicasService;
+import es.nonomldev.gestiontunicas.reparto.dto.PlantillaResguardoDTO;
+import es.nonomldev.gestiontunicas.reparto.service.PlantillaResguardoService;
+import es.nonomldev.gestiontunicas.reparto.service.RepartoService;
 import es.nonomldev.gestiontunicas.seguridad.config.SecurityConfig;
 import es.nonomldev.gestiontunicas.seguridad.service.AuthService;
 import es.nonomldev.gestiontunicas.seguridad.service.RolService;
@@ -65,6 +71,9 @@ class MatrizAccesoApiTest {
 	private static final Set<String> SOLO_ADMIN = Set.of("ADMIN");
 	private static final Set<String> GESTION_HERMANOS = Set.of("ADMIN", "PRIOSTE", "MAYORDOMO", "SECRETARIO");
 	private static final Set<String> GESTION_TUNICAS = Set.of("ADMIN", "PRIOSTE");
+	private static final Set<String> CONSULTA_CONFIGURACION = Set.of("ADMIN", "PRIOSTE", "MAYORDOMO", "SECRETARIO");
+	private static final Set<String> GESTION_REPARTO = Set.of("ADMIN", "PRIOSTE");
+	private static final Set<String> CONSULTA_REPARTO = Set.of("ADMIN", "PRIOSTE", "MAYORDOMO", "SECRETARIO");
 
 	private static final String USUARIO = """
 			{"username":"usuario.prueba","nombre":"Nombre","apellidos":"Apellidos","cargo":"CAPILLER",
@@ -78,11 +87,26 @@ class MatrizAccesoApiTest {
 	private static final String REPARACION = """
 			{"tipoPieza":"CAPA","tipo":"REPARACION","descripcion":"Escudo JHS despegado","fechaInicio":"2026-11-24"}
 			""";
+	private static final String JORNADA = """
+			{"fecha":"2027-03-01","horaInicio":"18:00","horaFin":"21:00","limosna":null,
+			 "permiteRenovacion":true,"permiteNuevaAlta":true,"permiteCambio":true}
+			""";
+	private static final String PERIODO = "{\"inicio\":\"2027-04-05\",\"fin\":\"2027-04-30\",\"plazoGraciaMeses\":2}";
+	private static final String REPARTO = """
+			{"anio":2027,"fechaJuevesSanto":null,"edadMin":10,"edadMax":15,"periodoDevolucion":%s,
+			 "lugarDevolucion":"Casa de hermandad","limosna":20,
+			 "tarifas":{"importePiezaPrincipal":30,"importeTalega":5,"importeRetraso":10,"importeCingulo":5,
+			            "importeSuciedad":10,"importeCargoTotal":150},
+			 "toleranciaMedidaCm":5,"modoTransicion":true,"jornadas":[%s,%s,%s]}
+			""".formatted(PERIODO, JORNADA, JORNADA, JORNADA);
+	private static final String CAMBIO_PERIODO = "{\"periodo\":%s,\"motivo\":\"Lo pide la Junta\"}".formatted(PERIODO);
+	private static final String PLANTILLA = "{\"plantillaId\":1}";
 	private static final String CAMBIO_PASSWORD = "{\"passwordActual\":\"temporal-1234\",\"passwordNueva\":\"contrasena-nueva\"}";
 	private static final String LOGIN = "{\"username\":\"usuario.prueba\",\"password\":\"clave-de-prueba\"}";
 	private static final String REFRESH = "{\"refreshToken\":\"refresh-de-prueba\"}";
 	private static final String SUBIDA_EXCEL = "POST /api/v1/hermanos/importaciones";
 	private static final String SUBIDA_INVENTARIO = "POST /api/v1/tunicas/importaciones";
+	private static final String SUBIDA_PLANTILLA = "POST /api/v1/plantillas-resguardo";
 	private static final String CAMBIAR_PASSWORD = "POST /api/v1/auth/cambiar-password";
 
 	private static final List<Endpoint> PROTEGIDOS = List.of(
@@ -94,6 +118,9 @@ class MatrizAccesoApiTest {
 			new Endpoint("PUT /api/v1/usuarios/{id}", 200, USUARIO, SOLO_ADMIN),
 			new Endpoint("POST /api/v1/usuarios/{id}/restablecer-password", 200, null, SOLO_ADMIN),
 			new Endpoint("GET /api/v1/roles", 200, null, SOLO_ADMIN),
+
+			new Endpoint("GET /api/v1/configuracion", 200, null, CONSULTA_CONFIGURACION),
+			new Endpoint("PUT /api/v1/configuracion/{clave}", 200, "{\"valor\":\"3\"}", SOLO_ADMIN),
 
 			new Endpoint("GET /api/v1/hermanos", 200, null, ROLES),
 			new Endpoint("GET /api/v1/hermanos/criterio-edad", 200, null, ROLES),
@@ -128,7 +155,26 @@ class MatrizAccesoApiTest {
 			new Endpoint("PUT /api/v1/tunicas/importaciones/filas/{filaId}/decision", 200, DECISION, GESTION_TUNICAS),
 			new Endpoint("POST /api/v1/tunicas/importaciones/{id}/confirmar", 200, null, GESTION_TUNICAS),
 			new Endpoint("POST /api/v1/tunicas/importaciones/{id}/cancelar", 200, null, GESTION_TUNICAS),
-			new Endpoint("GET /api/v1/tunicas/importaciones/plantilla", 200, null, GESTION_TUNICAS));
+			new Endpoint("GET /api/v1/tunicas/importaciones/plantilla", 200, null, GESTION_TUNICAS),
+
+			new Endpoint("GET /api/v1/repartos", 200, null, CONSULTA_REPARTO),
+			new Endpoint("GET /api/v1/repartos/abierto", 204, null, CONSULTA_REPARTO),
+			new Endpoint("GET /api/v1/repartos/{id}", 200, null, CONSULTA_REPARTO),
+			new Endpoint("POST /api/v1/repartos", 201, REPARTO, GESTION_REPARTO),
+			new Endpoint("PUT /api/v1/repartos/{id}", 200, REPARTO, GESTION_REPARTO),
+			new Endpoint("PUT /api/v1/repartos/{id}/plantilla", 200, PLANTILLA, GESTION_REPARTO),
+			new Endpoint("POST /api/v1/repartos/{id}/abrir", 200, null, GESTION_REPARTO),
+			new Endpoint("POST /api/v1/repartos/{id}/liberar-reservas", 200, null, GESTION_REPARTO),
+			new Endpoint("POST /api/v1/repartos/{id}/cerrar", 200, null, GESTION_REPARTO),
+			new Endpoint("PATCH /api/v1/repartos/{id}/periodo-devolucion", 200, CAMBIO_PERIODO, GESTION_REPARTO),
+			new Endpoint("GET /api/v1/repartos/{id}/periodo-devolucion/cambios", 200, null, CONSULTA_REPARTO),
+			new Endpoint("POST /api/v1/repartos/{id}/jornadas-extraordinarias", 201, JORNADA, GESTION_REPARTO),
+			new Endpoint("GET /api/v1/repartos/{id}/reservas", 200, null, CONSULTA_REPARTO),
+
+			new Endpoint(SUBIDA_PLANTILLA, 201, null, GESTION_REPARTO),
+			new Endpoint("GET /api/v1/plantillas-resguardo", 200, null, GESTION_REPARTO),
+			new Endpoint("GET /api/v1/plantillas-resguardo/{id}", 200, null, GESTION_REPARTO),
+			new Endpoint("GET /api/v1/plantillas-resguardo/{id}/fichero", 200, null, GESTION_REPARTO));
 
 	/** Parámetros obligatorios de algunos GET, para que la petición sea válida. */
 	private static final Map<String, String> PARAMETROS = Map.of(
@@ -170,6 +216,22 @@ class MatrizAccesoApiTest {
 
 	@MockitoBean
 	private ReparacionService reparacionService;
+
+	@MockitoBean
+	private RepartoService repartoService;
+
+	@MockitoBean
+	private ConfiguracionService configuracionService;
+
+	@MockitoBean
+	private PlantillaResguardoService plantillaResguardoService;
+
+	/** La descarga de la plantilla necesita el nombre del fichero. */
+	@BeforeEach
+	void datosDeLaPlantilla() {
+		when(plantillaResguardoService.obtener(1L)).thenReturn(
+				new PlantillaResguardoDTO(1L, "Resguardo", "resguardo.docx", List.of(), List.of(), "usuario.prueba", null));
+	}
 
 	@Test
 	void todosLosEndpointsEstanEnLaMatriz() {
@@ -244,7 +306,8 @@ class MatrizAccesoApiTest {
 
 	private void sinLlegarAlServicio() {
 		verifyNoInteractions(authService, usuarioService, rolService, hermanoService, importacionService, tunicaService,
-				importacionTunicasService, reparacionService);
+				importacionTunicasService, reparacionService, repartoService,
+				plantillaResguardoService, configuracionService);
 	}
 
 	private static Stream<Arguments> endpointYRol() {
@@ -261,9 +324,14 @@ class MatrizAccesoApiTest {
 
 	private static AbstractMockHttpServletRequestBuilder<?> peticion(Endpoint endpoint) {
 		String url = endpoint.ruta().replace("{id}", "1").replace("{filaId}", "1").replace("{tunicaId}", "1")
+				.replace("{clave}", "reparto.tolerancia_medida_cm")
 				+ PARAMETROS.getOrDefault(endpoint.clave(), "");
 		if (SUBIDA_EXCEL.equals(endpoint.clave()) || SUBIDA_INVENTARIO.equals(endpoint.clave())) {
 			return multipart(url).file(new MockMultipartFile("fichero", "fichero.xlsx",
+					MediaType.APPLICATION_OCTET_STREAM_VALUE, new byte[] { 1 }));
+		}
+		if (SUBIDA_PLANTILLA.equals(endpoint.clave())) {
+			return multipart(url).file(new MockMultipartFile("fichero", "resguardo.docx",
 					MediaType.APPLICATION_OCTET_STREAM_VALUE, new byte[] { 1 }));
 		}
 		var peticion = request(HttpMethod.valueOf(endpoint.metodo()), url);

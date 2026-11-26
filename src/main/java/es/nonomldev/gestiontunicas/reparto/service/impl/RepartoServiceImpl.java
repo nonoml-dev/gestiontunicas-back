@@ -2,6 +2,8 @@ package es.nonomldev.gestiontunicas.reparto.service.impl;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +50,9 @@ import lombok.RequiredArgsConstructor;
 public class RepartoServiceImpl implements RepartoService {
 
 	private static final int JORNADAS_ORDINARIAS = 3;
+	/** Al empezar este día ordinario se liberan las reservas no recogidas (análisis §4.3). */
+	private static final int DIA_LIBERACION_RESERVAS = 3;
+	private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
 	private final RepartoRepository repartoRepository;
 	private final JornadaRepository jornadaRepository;
@@ -146,9 +151,27 @@ public class RepartoServiceImpl implements RepartoService {
 	public RepartoDTO liberarReservas(Long id) {
 		RepartoEntity reparto = buscar(id);
 		exigirEstado(reparto, EstadoRepartoEnum.ABIERTO, "no está abierto");
+		if (reparto.getReservasLiberadasEn() != null) {
+			throw new ReglaNegocioException("Las reservas del reparto de %d ya se liberaron".formatted(reparto.getAnio()));
+		}
 		liberarReservasActivas(reparto);
 		reparto.setReservasLiberadasEn(Instant.now(clock));
 		return mapper.toDTO(reparto);
+	}
+
+	@Override
+	public Optional<RepartoDTO> liberarReservasSiEmpiezaElDia3() {
+		LocalDate hoy = LocalDate.now(clock);
+		return repartoRepository.findFirstByEstado(EstadoRepartoEnum.ABIERTO)
+				.filter(reparto -> reparto.getReservasLiberadasEn() == null)
+				.filter(reparto -> reparto.getJornadas().stream()
+						.filter(j -> !j.isExtraordinaria() && j.getNumero() == DIA_LIBERACION_RESERVAS)
+						.anyMatch(j -> !hoy.isBefore(j.getFecha())))
+				.map(reparto -> {
+					liberarReservasActivas(reparto);
+					reparto.setReservasLiberadasEn(Instant.now(clock));
+					return mapper.toDTO(reparto);
+				});
 	}
 
 	@Override
@@ -190,7 +213,10 @@ public class RepartoServiceImpl implements RepartoService {
 			throw new ReglaNegocioException("El reparto de %d está cerrado".formatted(reparto.getAnio()));
 		}
 		if (reparto.jornadaDe(request.fecha()).isPresent()) {
-			throw new ReglaNegocioException("Ya hay una jornada el " + request.fecha());
+			throw new ReglaNegocioException("Ya hay una jornada el " + request.fecha().format(FORMATO_FECHA));
+		}
+		if (!request.permiteRenovacion() && !request.permiteNuevaAlta() && !request.permiteCambio()) {
+			throw new ReglaNegocioException("Marca al menos una operación para la jornada extraordinaria");
 		}
 		JornadaEntity jornada = mapper.toEntity(request);
 		jornada.setNumero(jornadaRepository.maxNumero(id) + 1);
