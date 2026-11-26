@@ -38,6 +38,12 @@ public interface RepartoService {
 	/** Al empezar el día 3: las reservas no recogidas se liberan y sus túnicas quedan disponibles. */
 	RepartoDTO liberarReservas(Long id);
 
+	/**
+	 * Liberación automática: si el reparto abierto ya ha llegado al día 3 y sus reservas siguen sin liberar,
+	 * las libera. Devuelve el reparto si lo ha hecho; vacío si no tocaba o ya estaban liberadas.
+	 */
+	Optional<RepartoDTO> liberarReservasSiEmpiezaElDia3();
+
 	RepartoDTO cerrar(Long id);
 
 	/** Cambio del periodo de devolución o del plazo de gracia. Queda auditado con su motivo. */
